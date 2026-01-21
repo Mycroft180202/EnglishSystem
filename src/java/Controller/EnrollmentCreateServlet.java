@@ -1,0 +1,154 @@
+package Controller;
+
+import DAO.ClassDAO;
+import DAO.EnrollmentDAO;
+import DAO.StudentDAO;
+import Model.CenterClass;
+import Model.Student;
+import Util.Flash;
+import Util.FormToken;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+
+@WebServlet({"/admin/enrollments/create", "/consultant/enrollments/create"})
+public class EnrollmentCreateServlet extends HttpServlet {
+    private final EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+    private final StudentDAO studentDAO = new StudentDAO();
+    private final ClassDAO classDAO = new ClassDAO();
+    private static final String TOKEN_KEY = "enrollCreateToken";
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            req.setCharacterEncoding("UTF-8");
+            resp.setCharacterEncoding("UTF-8");
+            req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+            loadData(req);
+            req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+        } catch (Exception ex) {
+            throw new ServletException(ex);
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            req.setCharacterEncoding("UTF-8");
+            resp.setCharacterEncoding("UTF-8");
+
+            if (!FormToken.consume(req, TOKEN_KEY, req.getParameter("formToken"))) {
+                resp.sendRedirect(req.getContextPath() + basePath(req) + "/enrollments");
+                return;
+            }
+
+            int studentId = parseInt(req.getParameter("studentId"), 0);
+            int classId = parseInt(req.getParameter("classId"), 0);
+            if (studentId <= 0 || classId <= 0) {
+                req.setAttribute("error", "Vui lòng chọn học viên và lớp học.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+
+            Student s = studentDAO.findById(studentId);
+            CenterClass c = classDAO.findById(classId);
+            if (s == null || c == null) {
+                req.setAttribute("error", "Dữ liệu không hợp lệ.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+            if (!"ACTIVE".equalsIgnoreCase(s.getStatus())) {
+                req.setAttribute("error", "Học viên đang INACTIVE.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+            if (!"OPEN".equalsIgnoreCase(c.getStatus()) && !"DRAFT".equalsIgnoreCase(c.getStatus())) {
+                req.setAttribute("error", "Lớp không ở trạng thái cho phép đăng ký (DRAFT/OPEN).");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+
+            int capacity = enrollmentDAO.getClassCapacity(classId);
+            int activeCount = enrollmentDAO.countActiveByClass(classId);
+            if (capacity > 0 && activeCount >= capacity) {
+                req.setAttribute("error", "Lớp đã đủ sĩ số.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+
+            if (enrollmentDAO.hasScheduleConflict(studentId, classId)) {
+                req.setAttribute("error", "Học viên bị trùng lịch với lớp khác.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+
+            try {
+                enrollmentDAO.create(studentId, classId, "ACTIVE");
+            } catch (Exception ex) {
+                req.setAttribute("error", "Không thể đăng ký (có thể đã đăng ký lớp này).");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+
+            Flash.success(req, "Đăng ký học thành công.");
+            resp.sendRedirect(req.getContextPath() + basePath(req) + "/enrollments");
+        } catch (Exception ex) {
+            throw new ServletException(ex);
+        }
+    }
+
+    private void loadData(HttpServletRequest req) throws Exception {
+        List<Student> students = studentDAO.listActive();
+        List<CenterClass> classes = classDAO.listAll(null);
+        req.setAttribute("students", students);
+        req.setAttribute("classes", classes);
+    }
+
+    private static String basePath(HttpServletRequest req) {
+        String uri = req.getRequestURI();
+        String ctx = req.getContextPath();
+        String path = uri.substring(ctx.length());
+        return path.startsWith("/admin/") ? "/admin" : "/consultant";
+    }
+
+    private static int parseInt(String s, int fallback) {
+        try {
+            return Integer.parseInt(s == null ? "" : s.trim());
+        } catch (NumberFormatException ex) {
+            return fallback;
+        }
+    }
+}
+
