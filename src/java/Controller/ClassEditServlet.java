@@ -99,14 +99,24 @@ public class ClassEditServlet extends HttpServlet {
                 return;
             }
 
-            classDAO.update(c);
-            if (newTeacherId != null && (oldTeacherId == null || !oldTeacherId.equals(newTeacherId))) {
+            boolean teacherChanged = newTeacherId != null && (oldTeacherId == null || !oldTeacherId.equals(newTeacherId));
+            if (teacherChanged) {
                 try {
                     scheduleDAO.updateTeacherForClass(id, newTeacherId);
-                    sessionDAO.updateTeacherForScheduledSessions(id, newTeacherId);
                 } catch (Exception ex) {
-                    Flash.error(req, "Đã đổi giáo viên lớp, nhưng không thể đồng bộ lịch/buổi học (có thể trùng lịch giáo viên). Hãy kiểm tra lại lịch học.");
+                    req.setAttribute("error", "Không thể đổi giáo viên vì trùng lịch theo thời khóa biểu hiện tại. Hãy đổi lịch học của lớp trước.");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "edit");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
                 }
+            }
+
+            classDAO.update(c);
+            if (teacherChanged) {
+                sessionDAO.updateTeacherForScheduledSessions(id, newTeacherId);
             }
             Flash.success(req, "Cập nhật lớp học thành công.");
             resp.sendRedirect(req.getContextPath() + "/admin/classes");

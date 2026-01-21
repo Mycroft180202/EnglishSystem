@@ -11,14 +11,16 @@ import java.util.List;
 public class ClassScheduleDAO extends DBContext {
     public List<ClassSchedule> listByClass(int classId) throws Exception {
         String sql = """
-                SELECT cs.schedule_id, cs.class_id, cs.day_of_week, cs.slot_id, cs.room_id, cs.teacher_id,
+                SELECT cs.schedule_id, cs.class_id, cs.day_of_week, cs.slot_id, cs.room_id,
+                       c.teacher_id,
                        ts.name AS slot_name, CONVERT(varchar(5), ts.start_time, 108) AS start_time,
                        CONVERT(varchar(5), ts.end_time, 108) AS end_time,
                        r.room_name, t.full_name AS teacher_name
                 FROM dbo.class_schedules cs
+                JOIN dbo.classes c ON cs.class_id = c.class_id
                 JOIN dbo.time_slots ts ON cs.slot_id = ts.slot_id
                 JOIN dbo.rooms r ON cs.room_id = r.room_id
-                JOIN dbo.teachers t ON cs.teacher_id = t.teacher_id
+                LEFT JOIN dbo.teachers t ON c.teacher_id = t.teacher_id
                 WHERE cs.class_id = ?
                 ORDER BY cs.day_of_week, ts.start_time
                 """;

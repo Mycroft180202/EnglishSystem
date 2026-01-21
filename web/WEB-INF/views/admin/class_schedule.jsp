@@ -57,14 +57,10 @@
 
                 <div class="col-md-3">
                     <label class="form-label">Giáo viên</label>
-                    <select class="form-select" name="teacherId" required>
-                        <option value="">-- Chọn giáo viên --</option>
-                        <c:forEach items="${teachers}" var="tch">
-                            <option value="${tch.teacherId}" ${clazz.teacherId == tch.teacherId ? 'selected' : ''}>
-                                <c:out value="${tch.fullName}"/>
-                            </option>
-                        </c:forEach>
-                    </select>
+                    <input class="form-control" value="${clazz.teacherName}" disabled>
+                    <div class="form-text">
+                        Đổi giáo viên tại trang <a href="${pageContext.request.contextPath}/admin/classes">Lớp học</a>.
+                    </div>
                 </div>
 
                 <div class="col-md-3">
@@ -125,7 +121,7 @@
                     <th>Giờ</th>
                     <th>Phòng</th>
                     <th>Giáo viên</th>
-                    <th class="text-end">Xóa</th>
+                    <th class="text-end">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,8 +141,18 @@
                         <td><c:out value="${sc.slotName}"/></td>
                         <td><c:out value="${sc.startTime}"/>-<c:out value="${sc.endTime}"/></td>
                         <td><c:out value="${sc.roomName}"/></td>
-                        <td><c:out value="${sc.teacherName}"/></td>
+                        <td><c:out value="${clazz.teacherName}"/></td>
                         <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editScheduleModal"
+                                    data-schedule-id="${sc.scheduleId}"
+                                    data-day-of-week="${sc.dayOfWeek}"
+                                    data-slot-id="${sc.slotId}"
+                                    data-room-id="${sc.roomId}">
+                                Sửa
+                            </button>
                             <form method="post" action="${pageContext.request.contextPath}/admin/class-schedules" class="d-inline">
                                 <input type="hidden" name="formToken" value="${formToken}">
                                 <input type="hidden" name="classId" value="${clazz.classId}">
@@ -166,4 +172,88 @@
             </tbody>
         </table>
     </div>
+
+    <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="${pageContext.request.contextPath}/admin/class-schedules"
+                      onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Đổi lịch học</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="formToken" value="${formToken}">
+                        <input type="hidden" name="classId" value="${clazz.classId}">
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="scheduleId" id="editScheduleId">
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label">Thứ</label>
+                                <select class="form-select" name="dayOfWeek" id="editDayOfWeek" required>
+                                    <option value="1">Thứ 2</option>
+                                    <option value="2">Thứ 3</option>
+                                    <option value="3">Thứ 4</option>
+                                    <option value="4">Thứ 5</option>
+                                    <option value="5">Thứ 6</option>
+                                    <option value="6">Thứ 7</option>
+                                    <option value="7">Chủ nhật</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Ca học</label>
+                                <select class="form-select" name="slotId" id="editSlotId" required>
+                                    <option value="">-- Chọn ca --</option>
+                                    <c:forEach items="${slots}" var="s">
+                                        <option value="${s.slotId}"><c:out value="${s.name}"/> (<c:out value="${s.startTime}"/>-<c:out value="${s.endTime}"/>)</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Phòng học</label>
+                                <select class="form-select" name="roomId" id="editRoomId" required>
+                                    <option value="">-- Chọn phòng --</option>
+                                    <c:forEach items="${rooms}" var="r">
+                                        <option value="${r.roomId}"><c:out value="${r.roomName}"/> (<c:out value="${r.roomCode}"/>)</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" value="1" id="updateSessions" name="updateSessions">
+                            <label class="form-check-label" for="updateSessions">
+                                Rebuild buổi học từ hôm nay (xóa các buổi SCHEDULED và tạo lại theo lịch mới)
+                            </label>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            Lưu ý: chỉ ảnh hưởng các buổi có trạng thái SCHEDULED và từ hôm nay trở đi.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </t:layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('editScheduleModal');
+        if (!modal) return;
+        modal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            if (!button) return;
+            document.getElementById('editScheduleId').value = button.getAttribute('data-schedule-id') || '';
+            document.getElementById('editDayOfWeek').value = button.getAttribute('data-day-of-week') || '1';
+            document.getElementById('editSlotId').value = button.getAttribute('data-slot-id') || '';
+            document.getElementById('editRoomId').value = button.getAttribute('data-room-id') || '';
+            var cb = document.getElementById('updateSessions');
+            if (cb) cb.checked = false;
+        });
+    });
+</script>
