@@ -11,6 +11,35 @@
         <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/student/timetable">Lịch học</a>
     </div>
 
+    <c:if test="${not empty myEnrollments}">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Lop ban dang hoc</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mon / Lop</th>
+                                <th>Trang thai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <c:forEach items="${myEnrollments}" var="e">
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold"><c:out value="${empty e.classCode ? e.className : e.classCode}"/></div>
+                                        <div class="small text-muted"><c:out value="${e.courseName}"/></div>
+                                    </td>
+                                    <td><span class="badge text-bg-success"><c:out value="${e.status}"/></span></td>
+                                </tr>
+                            </c:forEach>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </c:if>
+
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
             <thead>
@@ -54,4 +83,3 @@
         </table>
     </div>
 </t:layout>
-

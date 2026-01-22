@@ -34,7 +34,7 @@
 
                 <div class="col-md-3">
                     <label class="form-label">Thứ</label>
-                    <select class="form-select" name="dayOfWeek" required>
+                    <select class="form-select" name="dayOfWeek" id="addDayOfWeek" required>
                         <option value="1">Thứ 2</option>
                         <option value="2">Thứ 3</option>
                         <option value="3">Thứ 4</option>
@@ -43,11 +43,17 @@
                         <option value="6">Thứ 7</option>
                         <option value="7">Chủ nhật</option>
                     </select>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal" data-bs-target="#roomSuggestModal">
+                            Các slot khác trong tuần
+                        </button>
+                    </div>
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label">Ca học</label>
-                    <select class="form-select" name="slotId" required>
+                    <select class="form-select" name="slotId" id="addSlotId" required>
                         <option value="">-- Chọn ca --</option>
                         <c:forEach items="${slots}" var="s">
                             <option value="${s.slotId}"><c:out value="${s.name}"/> (<c:out value="${s.startTime}"/>-<c:out value="${s.endTime}"/>)</option>
@@ -68,7 +74,7 @@
 
                 <div class="col-md-3">
                     <label class="form-label">Phòng học</label>
-                    <select class="form-select" name="roomId" required>
+                    <select class="form-select" name="roomId" id="addRoomId" required>
                         <option value="">-- Chọn phòng --</option>
                         <c:forEach items="${rooms}" var="r">
                             <option value="${r.roomId}" ${clazz.roomId == r.roomId ? 'selected' : ''}>
@@ -251,6 +257,72 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="roomSuggestModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gợi ý Slot trong tuần</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Phòng học</label>
+                            <select class="form-select" id="suggestRoomId">
+                                <option value="">-- Chọn phòng --</option>
+                                <c:forEach items="${rooms}" var="r">
+                                    <option value="${r.roomId}"><c:out value="${r.roomName}"/> (<c:out value="${r.roomCode}"/>)</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="text-muted small">
+                                Click vào các slot Free để chọn nhanh 
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center" id="roomSuggestTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:180px;">Slot</th>
+                                    <th>MON</th>
+                                    <th>TUE</th>
+                                    <th>WED</th>
+                                    <th>THU</th>
+                                    <th>FRI</th>
+                                    <th>SAT</th>
+                                    <th>SUN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach items="${slots}" var="s">
+                                    <tr>
+                                        <th class="text-start">
+                                            <div class="fw-semibold"><c:out value="${s.name}"/></div>
+                                            <div class="small text-muted"><c:out value="${s.startTime}"/>-<c:out value="${s.endTime}"/></div>
+                                        </th>
+                                        <td data-dow="1" data-slot-id="${s.slotId}"></td>
+                                        <td data-dow="2" data-slot-id="${s.slotId}"></td>
+                                        <td data-dow="3" data-slot-id="${s.slotId}"></td>
+                                        <td data-dow="4" data-slot-id="${s.slotId}"></td>
+                                        <td data-dow="5" data-slot-id="${s.slotId}"></td>
+                                        <td data-dow="6" data-slot-id="${s.slotId}"></td>
+                                        <td data-dow="7" data-slot-id="${s.slotId}"></td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </t:layout>
 
 <script>
@@ -277,6 +349,89 @@
         if (cb && wrap) {
             cb.addEventListener('change', function () {
                 wrap.style.display = cb.checked ? '' : 'none';
+            });
+        }
+
+        var suggestModal = document.getElementById('roomSuggestModal');
+        var suggestRoom = document.getElementById('suggestRoomId');
+        var addRoom = document.getElementById('addRoomId');
+        var addDow = document.getElementById('addDayOfWeek');
+        var addSlot = document.getElementById('addSlotId');
+        var table = document.getElementById('roomSuggestTable');
+
+        function clearSuggestTable() {
+            if (!table) return;
+            table.querySelectorAll('td[data-dow][data-slot-id]').forEach(function (td) {
+                td.textContent = '';
+                td.className = '';
+                td.removeAttribute('title');
+            });
+        }
+
+        function markCellFree(td) {
+            td.classList.add('bg-success-subtle');
+            td.classList.add('cursor-pointer');
+            td.textContent = 'Free';
+        }
+
+        function markCellBusy(td, label) {
+            td.classList.add('bg-light');
+            td.classList.add('text-muted');
+            td.textContent = label || 'Busy';
+        }
+
+        async function loadAvailability(roomId) {
+            clearSuggestTable();
+            if (!roomId || !table) return;
+            var url = '${pageContext.request.contextPath}/admin/rooms/availability?classId=${clazz.classId}&roomId=' + encodeURIComponent(roomId);
+            var res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) return;
+            var data = await res.json();
+            if (!data || !data.ok) return;
+            var occupied = new Map();
+            (data.occupied || []).forEach(function (o) {
+                occupied.set(o.dayOfWeek + '-' + o.slotId, o);
+            });
+            table.querySelectorAll('td[data-dow][data-slot-id]').forEach(function (td) {
+                var key = td.getAttribute('data-dow') + '-' + td.getAttribute('data-slot-id');
+                var o = occupied.get(key);
+                if (o) {
+                    var label = (o.classCode && o.classCode.length) ? o.classCode : (o.className || 'Busy');
+                    markCellBusy(td, label);
+                    td.title = o.className || '';
+                } else {
+                    markCellFree(td);
+                }
+            });
+        }
+
+        if (suggestRoom) {
+            suggestRoom.addEventListener('change', function () {
+                loadAvailability(suggestRoom.value);
+            });
+        }
+
+        if (suggestModal) {
+            suggestModal.addEventListener('show.bs.modal', function () {
+                if (suggestRoom && addRoom) suggestRoom.value = addRoom.value || '';
+                loadAvailability(suggestRoom ? suggestRoom.value : '');
+            });
+        }
+
+        if (table) {
+            table.addEventListener('click', function (e) {
+                var td = e.target.closest('td[data-dow][data-slot-id]');
+                if (!td) return;
+                if (!td.classList.contains('bg-success-subtle')) return;
+
+                var dow = td.getAttribute('data-dow');
+                var slotId = td.getAttribute('data-slot-id');
+                if (addDow) addDow.value = dow;
+                if (addSlot) addSlot.value = slotId;
+                if (addRoom && suggestRoom) addRoom.value = suggestRoom.value;
+
+                var m = bootstrap.Modal.getInstance(suggestModal);
+                if (m) m.hide();
             });
         }
     });

@@ -5,10 +5,26 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClassScheduleDAO extends DBContext {
+    public static final class SlotOccupancy {
+        private int dayOfWeek;
+        private int slotId;
+        private int classId;
+        private String classCode;
+        private String className;
+
+        public int getDayOfWeek() { return dayOfWeek; }
+        public int getSlotId() { return slotId; }
+        public int getClassId() { return classId; }
+        public String getClassCode() { return classCode; }
+        public String getClassName() { return className; }
+    }
+
     public List<ClassSchedule> listByClass(int classId) throws Exception {
         String sql = """
                 SELECT cs.schedule_id, cs.class_id, cs.day_of_week, cs.slot_id, cs.room_id,
@@ -35,7 +51,136 @@ public class ClassScheduleDAO extends DBContext {
         return result;
     }
 
+    public List<SlotOccupancy> listRoomOccupancyForRange(int roomId, LocalDate start, LocalDate end, int excludeClassId) throws Exception {
+        String sql = """
+                SELECT cs.day_of_week, cs.slot_id, c.class_id, c.class_code, c.class_name
+                FROM dbo.class_schedules cs
+                JOIN dbo.classes c ON cs.class_id = c.class_id
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                WHERE cs.room_id = ?
+                  AND c.class_id <> ?
+                  AND c.start_date IS NOT NULL
+                  AND c.start_date <= ?
+                  AND COALESCE(c.end_date, DATEADD(day, (cr.duration_weeks * 7) - 1, c.start_date)) >= ?
+                ORDER BY cs.day_of_week, cs.slot_id, c.class_id
+                """;
+        List<SlotOccupancy> result = new ArrayList<>();
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, roomId);
+            ps.setInt(2, Math.max(0, excludeClassId));
+            ps.setDate(3, Date.valueOf(end));
+            ps.setDate(4, Date.valueOf(start));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    SlotOccupancy o = new SlotOccupancy();
+                    o.dayOfWeek = rs.getInt("day_of_week");
+                    o.slotId = rs.getInt("slot_id");
+                    o.classId = rs.getInt("class_id");
+                    o.classCode = rs.getString("class_code");
+                    o.className = rs.getString("class_name");
+                    result.add(o);
+                }
+            }
+        }
+        return result;
+    }
+
+    public SlotOccupancy findRoomConflict(int classId, int roomId, int dayOfWeek, int slotId, int excludeScheduleId) throws Exception {
+        ClassDAO.DateRange range = new ClassDAO().resolveDateRange(classId);
+        if (range == null) return null;
+        return findRoomConflictForRange(classId, roomId, dayOfWeek, slotId, excludeScheduleId, range.startDate, range.endDate);
+    }
+
+    private SlotOccupancy findRoomConflictForRange(int classId, int roomId, int dayOfWeek, int slotId, int excludeScheduleId,
+                                                   LocalDate start, LocalDate end) throws Exception {
+        String sql = """
+                SELECT TOP 1 cs.day_of_week, cs.slot_id, c.class_id, c.class_code, c.class_name
+                FROM dbo.class_schedules cs
+                JOIN dbo.classes c ON cs.class_id = c.class_id
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                WHERE cs.room_id = ?
+                  AND cs.day_of_week = ?
+                  AND cs.slot_id = ?
+                  AND cs.class_id <> ?
+                  AND cs.schedule_id <> ?
+                  AND c.start_date IS NOT NULL
+                  AND c.start_date <= ?
+                  AND COALESCE(c.end_date, DATEADD(day, (cr.duration_weeks * 7) - 1, c.start_date)) >= ?
+                ORDER BY c.start_date DESC, c.class_id DESC
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, roomId);
+            ps.setInt(2, dayOfWeek);
+            ps.setInt(3, slotId);
+            ps.setInt(4, classId);
+            ps.setInt(5, Math.max(0, excludeScheduleId));
+            ps.setDate(6, Date.valueOf(end));
+            ps.setDate(7, Date.valueOf(start));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                SlotOccupancy o = new SlotOccupancy();
+                o.dayOfWeek = rs.getInt("day_of_week");
+                o.slotId = rs.getInt("slot_id");
+                o.classId = rs.getInt("class_id");
+                o.classCode = rs.getString("class_code");
+                o.className = rs.getString("class_name");
+                return o;
+            }
+        }
+    }
+
+    public SlotOccupancy findTeacherConflict(int classId, int teacherId, int dayOfWeek, int slotId, int excludeScheduleId) throws Exception {
+        ClassDAO.DateRange range = new ClassDAO().resolveDateRange(classId);
+        if (range == null) return null;
+        String sql = """
+                SELECT TOP 1 cs.day_of_week, cs.slot_id, c.class_id, c.class_code, c.class_name
+                FROM dbo.class_schedules cs
+                JOIN dbo.classes c ON cs.class_id = c.class_id
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                WHERE cs.teacher_id = ?
+                  AND cs.day_of_week = ?
+                  AND cs.slot_id = ?
+                  AND cs.class_id <> ?
+                  AND cs.schedule_id <> ?
+                  AND c.start_date IS NOT NULL
+                  AND c.start_date <= ?
+                  AND COALESCE(c.end_date, DATEADD(day, (cr.duration_weeks * 7) - 1, c.start_date)) >= ?
+                ORDER BY c.start_date DESC, c.class_id DESC
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, teacherId);
+            ps.setInt(2, dayOfWeek);
+            ps.setInt(3, slotId);
+            ps.setInt(4, classId);
+            ps.setInt(5, Math.max(0, excludeScheduleId));
+            ps.setDate(6, Date.valueOf(range.endDate));
+            ps.setDate(7, Date.valueOf(range.startDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                SlotOccupancy o = new SlotOccupancy();
+                o.dayOfWeek = rs.getInt("day_of_week");
+                o.slotId = rs.getInt("slot_id");
+                o.classId = rs.getInt("class_id");
+                o.classCode = rs.getString("class_code");
+                o.className = rs.getString("class_name");
+                return o;
+            }
+        }
+    }
+
     public int create(ClassSchedule s) throws Exception {
+        SlotOccupancy roomConflict = findRoomConflict(s.getClassId(), s.getRoomId(), s.getDayOfWeek(), s.getSlotId(), 0);
+        if (roomConflict != null) {
+            throw new IllegalStateException("ROOM_CONFLICT:" + roomConflict.getClassId());
+        }
+        SlotOccupancy teacherConflict = findTeacherConflict(s.getClassId(), s.getTeacherId(), s.getDayOfWeek(), s.getSlotId(), 0);
+        if (teacherConflict != null) {
+            throw new IllegalStateException("TEACHER_CONFLICT:" + teacherConflict.getClassId());
+        }
+
         String sql = """
                 INSERT INTO dbo.class_schedules(class_id, day_of_week, slot_id, room_id, teacher_id)
                 VALUES(?, ?, ?, ?, ?)
@@ -56,6 +201,15 @@ public class ClassScheduleDAO extends DBContext {
     }
 
     public void update(ClassSchedule s) throws Exception {
+        SlotOccupancy roomConflict = findRoomConflict(s.getClassId(), s.getRoomId(), s.getDayOfWeek(), s.getSlotId(), s.getScheduleId());
+        if (roomConflict != null) {
+            throw new IllegalStateException("ROOM_CONFLICT:" + roomConflict.getClassId());
+        }
+        SlotOccupancy teacherConflict = findTeacherConflict(s.getClassId(), s.getTeacherId(), s.getDayOfWeek(), s.getSlotId(), s.getScheduleId());
+        if (teacherConflict != null) {
+            throw new IllegalStateException("TEACHER_CONFLICT:" + teacherConflict.getClassId());
+        }
+
         String sql = """
                 UPDATE dbo.class_schedules
                 SET day_of_week = ?, slot_id = ?, room_id = ?, teacher_id = ?

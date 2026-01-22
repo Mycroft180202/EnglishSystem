@@ -34,8 +34,9 @@ public class StudentClassBrowseServlet extends HttpServlet {
                 return;
             }
 
-            List<CenterClass> classes = classDAO.listAll("OPEN", null);
+            List<CenterClass> classes = classDAO.listOpenForStudent(null);
             BigDecimal balance = walletDAO.getBalance(user.getStudentId());
+            req.setAttribute("myEnrollments", enrollmentDAO.listAll(null, user.getStudentId(), "ACTIVE"));
             req.setAttribute("classes", classes);
             req.setAttribute("balance", balance);
             req.getRequestDispatcher("/WEB-INF/views/student/classes.jsp").forward(req, resp);

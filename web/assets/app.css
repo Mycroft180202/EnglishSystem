@@ -41,6 +41,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   box-shadow: 0 1px 0 rgba(15,23,42,.05);
 }
 .js-session-card { cursor: pointer; }
+.cursor-pointer { cursor: pointer; }
 .js-session-card:focus { outline: 3px solid rgba(37, 99, 235, 0.25); outline-offset: 2px; }
 .timetable-card--upcoming { border-color: rgba(37,99,235,.75); }
 .timetable-card--done { border-color: rgba(34,197,94,.75); }

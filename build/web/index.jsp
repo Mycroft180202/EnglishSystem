@@ -1,10 +1,8 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%
-    if (session != null && session.getAttribute("authUser") != null) {
-        response.sendRedirect(request.getContextPath() + "/app/home");
-        return;
-    }
-%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<c:if test="${not empty sessionScope.authUser}">
+    <c:redirect url="/app/home"/>
+</c:if>
 <!DOCTYPE html>
 <html lang="vi">
     <head>
@@ -13,7 +11,7 @@
         <title>Mycroft English Center</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-        <link href="<%= request.getContextPath() %>/assets/app.css" rel="stylesheet">
+        <link href="${pageContext.request.contextPath}/assets/app.css" rel="stylesheet">
         <style>
             .hero-bg {
                 background: radial-gradient(1200px 600px at 10% 10%, rgba(37,99,235,.22), transparent 55%),

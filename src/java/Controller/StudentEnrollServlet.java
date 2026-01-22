@@ -53,6 +53,11 @@ public class StudentEnrollServlet extends HttpServlet {
             }
 
             List<ClassSchedule> schedules = scheduleDAO.listByClass(classId);
+            if (schedules.isEmpty() || clazz.getStartDate() == null) {
+                Flash.error(req, "Lá»›p chÆ°a cÃ³ lá»‹ch há»c. Vui lÃ²ng chá»n lá»›p khÃ¡c.");
+                resp.sendRedirect(req.getContextPath() + "/student/classes");
+                return;
+            }
             BigDecimal balance = walletDAO.getBalance(user.getStudentId());
 
             req.setAttribute("clazz", clazz);
@@ -87,6 +92,13 @@ public class StudentEnrollServlet extends HttpServlet {
             CenterClass clazz = classId > 0 ? classDAO.findById(classId) : null;
             if (clazz == null || !"OPEN".equalsIgnoreCase(clazz.getStatus())) {
                 Flash.error(req, "Lớp không hợp lệ.");
+                resp.sendRedirect(req.getContextPath() + "/student/classes");
+                return;
+            }
+
+            List<ClassSchedule> schedules2 = scheduleDAO.listByClass(classId);
+            if (schedules2.isEmpty() || clazz.getStartDate() == null) {
+                Flash.error(req, "Lá»›p chÆ°a cÃ³ lá»‹ch há»c. Vui lÃ²ng chá»n lá»›p khÃ¡c.");
                 resp.sendRedirect(req.getContextPath() + "/student/classes");
                 return;
             }

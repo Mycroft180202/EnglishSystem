@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+    xmlns="https://jakarta.ee/xml/ns/jakartaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+    version="6.0"
+    metadata-complete="true">
+
+    <display-name>EnglishSystem</display-name>
+
+    <filter>
+        <filter-name>AuthzFilter</filter-name>
+        <filter-class>Filter.AuthzFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthzFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>Controller.LoginServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>HomeServlet</servlet-name>
+        <servlet-class>Controller.HomeServlet</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HomeServlet</servlet-name>
+        <url-pattern>/app/home</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ChangePasswordServlet</servlet-name>
+        <servlet-class>Controller.ChangePasswordServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ChangePasswordServlet</servlet-name>
+        <url-pattern>/app/change-password</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>Controller.LogoutServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>SetupServlet</servlet-name>
+        <servlet-class>Controller.SetupServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SetupServlet</servlet-name>
+        <url-pattern>/setup</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RegisterServlet</servlet-name>
+        <servlet-class>Controller.RegisterServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RegisterServlet</servlet-name>
+        <url-pattern>/register</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Users / Audit / Attendance ===== -->
+    <servlet>
+        <servlet-name>AdminUserCreateServlet</servlet-name>
+        <servlet-class>Controller.AdminUserCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminUserCreateServlet</servlet-name>
+        <url-pattern>/admin/users/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminAuditLogServlet</servlet-name>
+        <servlet-class>Controller.AdminAuditLogServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminAuditLogServlet</servlet-name>
+        <url-pattern>/admin/audit-logs</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminAuditLogViewServlet</servlet-name>
+        <servlet-class>Controller.AdminAuditLogViewServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminAuditLogViewServlet</servlet-name>
+        <url-pattern>/admin/audit-logs/view</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminAttendanceServlet</servlet-name>
+        <servlet-class>Controller.AdminAttendanceServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminAttendanceServlet</servlet-name>
+        <url-pattern>/admin/attendance</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Timetable / Rooms availability ===== -->
+    <servlet>
+        <servlet-name>AdminTimetableServlet</servlet-name>
+        <servlet-class>Controller.AdminTimetableServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminTimetableServlet</servlet-name>
+        <url-pattern>/admin/timetable</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminRoomAvailabilityServlet</servlet-name>
+        <servlet-class>Controller.AdminRoomAvailabilityServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminRoomAvailabilityServlet</servlet-name>
+        <url-pattern>/admin/rooms/availability</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Courses ===== -->
+    <servlet>
+        <servlet-name>CourseListServlet</servlet-name>
+        <servlet-class>Controller.CourseListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CourseListServlet</servlet-name>
+        <url-pattern>/admin/courses</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CourseCreateServlet</servlet-name>
+        <servlet-class>Controller.CourseCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CourseCreateServlet</servlet-name>
+        <url-pattern>/admin/courses/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CourseEditServlet</servlet-name>
+        <servlet-class>Controller.CourseEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CourseEditServlet</servlet-name>
+        <url-pattern>/admin/courses/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CourseDeleteServlet</servlet-name>
+        <servlet-class>Controller.CourseDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CourseDeleteServlet</servlet-name>
+        <url-pattern>/admin/courses/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CourseStatusServlet</servlet-name>
+        <servlet-class>Controller.CourseStatusServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CourseStatusServlet</servlet-name>
+        <url-pattern>/admin/courses/status</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Classes / Schedules / Sessions ===== -->
+    <servlet>
+        <servlet-name>ClassListServlet</servlet-name>
+        <servlet-class>Controller.ClassListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassListServlet</servlet-name>
+        <url-pattern>/admin/classes</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassCreateServlet</servlet-name>
+        <servlet-class>Controller.ClassCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassCreateServlet</servlet-name>
+        <url-pattern>/admin/classes/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassEditServlet</servlet-name>
+        <servlet-class>Controller.ClassEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassEditServlet</servlet-name>
+        <url-pattern>/admin/classes/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassDeleteServlet</servlet-name>
+        <servlet-class>Controller.ClassDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassDeleteServlet</servlet-name>
+        <url-pattern>/admin/classes/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassStatusServlet</servlet-name>
+        <servlet-class>Controller.ClassStatusServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassStatusServlet</servlet-name>
+        <url-pattern>/admin/classes/status</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassScheduleServlet</servlet-name>
+        <servlet-class>Controller.ClassScheduleServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassScheduleServlet</servlet-name>
+        <url-pattern>/admin/class-schedules</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassSessionListServlet</servlet-name>
+        <servlet-class>Controller.ClassSessionListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassSessionListServlet</servlet-name>
+        <url-pattern>/admin/class-sessions</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClassSessionUpdateServlet</servlet-name>
+        <servlet-class>Controller.ClassSessionUpdateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClassSessionUpdateServlet</servlet-name>
+        <url-pattern>/admin/class-sessions/update</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Rooms ===== -->
+    <servlet>
+        <servlet-name>RoomListServlet</servlet-name>
+        <servlet-class>Controller.RoomListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RoomListServlet</servlet-name>
+        <url-pattern>/admin/rooms</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RoomCreateServlet</servlet-name>
+        <servlet-class>Controller.RoomCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RoomCreateServlet</servlet-name>
+        <url-pattern>/admin/rooms/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RoomEditServlet</servlet-name>
+        <servlet-class>Controller.RoomEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RoomEditServlet</servlet-name>
+        <url-pattern>/admin/rooms/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RoomDeleteServlet</servlet-name>
+        <servlet-class>Controller.RoomDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RoomDeleteServlet</servlet-name>
+        <url-pattern>/admin/rooms/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RoomStatusServlet</servlet-name>
+        <servlet-class>Controller.RoomStatusServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RoomStatusServlet</servlet-name>
+        <url-pattern>/admin/rooms/status</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Teachers ===== -->
+    <servlet>
+        <servlet-name>TeacherListServlet</servlet-name>
+        <servlet-class>Controller.TeacherListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherListServlet</servlet-name>
+        <url-pattern>/admin/teachers</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherCreateServlet</servlet-name>
+        <servlet-class>Controller.TeacherCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherCreateServlet</servlet-name>
+        <url-pattern>/admin/teachers/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherEditServlet</servlet-name>
+        <servlet-class>Controller.TeacherEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherEditServlet</servlet-name>
+        <url-pattern>/admin/teachers/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherDeleteServlet</servlet-name>
+        <servlet-class>Controller.TeacherDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherDeleteServlet</servlet-name>
+        <url-pattern>/admin/teachers/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherStatusServlet</servlet-name>
+        <servlet-class>Controller.TeacherStatusServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherStatusServlet</servlet-name>
+        <url-pattern>/admin/teachers/status</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherAccountServlet</servlet-name>
+        <servlet-class>Controller.TeacherAccountServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherAccountServlet</servlet-name>
+        <url-pattern>/admin/teachers/account</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin/Consultant: Students ===== -->
+    <servlet>
+        <servlet-name>StudentListServlet</servlet-name>
+        <servlet-class>Controller.StudentListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentListServlet</servlet-name>
+        <url-pattern>/admin/students</url-pattern>
+        <url-pattern>/consultant/students</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentCreateServlet</servlet-name>
+        <servlet-class>Controller.StudentCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentCreateServlet</servlet-name>
+        <url-pattern>/admin/students/create</url-pattern>
+        <url-pattern>/consultant/students/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentEditServlet</servlet-name>
+        <servlet-class>Controller.StudentEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentEditServlet</servlet-name>
+        <url-pattern>/admin/students/edit</url-pattern>
+        <url-pattern>/consultant/students/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentDeleteServlet</servlet-name>
+        <servlet-class>Controller.StudentDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentDeleteServlet</servlet-name>
+        <url-pattern>/admin/students/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentStatusServlet</servlet-name>
+        <servlet-class>Controller.StudentStatusServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentStatusServlet</servlet-name>
+        <url-pattern>/admin/students/status</url-pattern>
+        <url-pattern>/consultant/students/status</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentAccountServlet</servlet-name>
+        <servlet-class>Controller.StudentAccountServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentAccountServlet</servlet-name>
+        <url-pattern>/admin/students/account</url-pattern>
+        <url-pattern>/consultant/students/account</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin/Consultant: Enrollments ===== -->
+    <servlet>
+        <servlet-name>EnrollmentListServlet</servlet-name>
+        <servlet-class>Controller.EnrollmentListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EnrollmentListServlet</servlet-name>
+        <url-pattern>/admin/enrollments</url-pattern>
+        <url-pattern>/consultant/enrollments</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>EnrollmentCreateServlet</servlet-name>
+        <servlet-class>Controller.EnrollmentCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EnrollmentCreateServlet</servlet-name>
+        <url-pattern>/admin/enrollments/create</url-pattern>
+        <url-pattern>/consultant/enrollments/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>EnrollmentDeleteServlet</servlet-name>
+        <servlet-class>Controller.EnrollmentDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EnrollmentDeleteServlet</servlet-name>
+        <url-pattern>/admin/enrollments/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>EnrollmentStatusServlet</servlet-name>
+        <servlet-class>Controller.EnrollmentStatusServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EnrollmentStatusServlet</servlet-name>
+        <url-pattern>/admin/enrollments/status</url-pattern>
+        <url-pattern>/consultant/enrollments/status</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Assessments ===== -->
+    <servlet>
+        <servlet-name>AssessmentListServlet</servlet-name>
+        <servlet-class>Controller.AssessmentListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AssessmentListServlet</servlet-name>
+        <url-pattern>/admin/assessments</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AssessmentCreateServlet</servlet-name>
+        <servlet-class>Controller.AssessmentCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AssessmentCreateServlet</servlet-name>
+        <url-pattern>/admin/assessments/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AssessmentEditServlet</servlet-name>
+        <servlet-class>Controller.AssessmentEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AssessmentEditServlet</servlet-name>
+        <url-pattern>/admin/assessments/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AssessmentDeleteServlet</servlet-name>
+        <servlet-class>Controller.AssessmentDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AssessmentDeleteServlet</servlet-name>
+        <url-pattern>/admin/assessments/delete</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin: Time Slots ===== -->
+    <servlet>
+        <servlet-name>TimeSlotListServlet</servlet-name>
+        <servlet-class>Controller.TimeSlotListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TimeSlotListServlet</servlet-name>
+        <url-pattern>/admin/time-slots</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TimeSlotCreateServlet</servlet-name>
+        <servlet-class>Controller.TimeSlotCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TimeSlotCreateServlet</servlet-name>
+        <url-pattern>/admin/time-slots/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TimeSlotEditServlet</servlet-name>
+        <servlet-class>Controller.TimeSlotEditServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TimeSlotEditServlet</servlet-name>
+        <url-pattern>/admin/time-slots/edit</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TimeSlotDeleteServlet</servlet-name>
+        <servlet-class>Controller.TimeSlotDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TimeSlotDeleteServlet</servlet-name>
+        <url-pattern>/admin/time-slots/delete</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Student ===== -->
+    <servlet>
+        <servlet-name>StudentTimetableServlet</servlet-name>
+        <servlet-class>Controller.StudentTimetableServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentTimetableServlet</servlet-name>
+        <url-pattern>/student/timetable</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentClassBrowseServlet</servlet-name>
+        <servlet-class>Controller.StudentClassBrowseServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentClassBrowseServlet</servlet-name>
+        <url-pattern>/student/classes</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentEnrollServlet</servlet-name>
+        <servlet-class>Controller.StudentEnrollServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentEnrollServlet</servlet-name>
+        <url-pattern>/student/enroll</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentFeeServlet</servlet-name>
+        <servlet-class>Controller.StudentFeeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentFeeServlet</servlet-name>
+        <url-pattern>/student/fees</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentWalletServlet</servlet-name>
+        <servlet-class>Controller.StudentWalletServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentWalletServlet</servlet-name>
+        <url-pattern>/student/wallet</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentWalletTopupPayOsServlet</servlet-name>
+        <servlet-class>Controller.StudentWalletTopupPayOsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentWalletTopupPayOsServlet</servlet-name>
+        <url-pattern>/student/wallet/topup/payos</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentPayOsPayServlet</servlet-name>
+        <servlet-class>Controller.StudentPayOsPayServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentPayOsPayServlet</servlet-name>
+        <url-pattern>/student/pay/payos</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentAbsenceRequestServlet</servlet-name>
+        <servlet-class>Controller.StudentAbsenceRequestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentAbsenceRequestServlet</servlet-name>
+        <url-pattern>/student/absence-requests/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>StudentResultServlet</servlet-name>
+        <servlet-class>Controller.StudentResultServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentResultServlet</servlet-name>
+        <url-pattern>/student/results</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Teacher ===== -->
+    <servlet>
+        <servlet-name>TeacherSessionServlet</servlet-name>
+        <servlet-class>Controller.TeacherSessionServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherSessionServlet</servlet-name>
+        <url-pattern>/teacher/sessions</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherAttendanceServlet</servlet-name>
+        <servlet-class>Controller.TeacherAttendanceServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherAttendanceServlet</servlet-name>
+        <url-pattern>/teacher/attendance</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherClassServlet</servlet-name>
+        <servlet-class>Controller.TeacherClassServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherClassServlet</servlet-name>
+        <url-pattern>/teacher/classes</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherScoreServlet</servlet-name>
+        <servlet-class>Controller.TeacherScoreServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherScoreServlet</servlet-name>
+        <url-pattern>/teacher/scores</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TeacherSessionAssessmentServlet</servlet-name>
+        <servlet-class>Controller.TeacherSessionAssessmentServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TeacherSessionAssessmentServlet</servlet-name>
+        <url-pattern>/teacher/session-assessment</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Consultant ===== -->
+    <servlet>
+        <servlet-name>ConsultantPaymentRequestCreateServlet</servlet-name>
+        <servlet-class>Controller.ConsultantPaymentRequestCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ConsultantPaymentRequestCreateServlet</servlet-name>
+        <url-pattern>/consultant/payment-requests/create</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Accounting ===== -->
+    <servlet>
+        <servlet-name>AccountingPaymentRequestServlet</servlet-name>
+        <servlet-class>Controller.AccountingPaymentRequestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AccountingPaymentRequestServlet</servlet-name>
+        <url-pattern>/accounting/payment-requests</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>InvoiceListServlet</servlet-name>
+        <servlet-class>Controller.InvoiceListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>InvoiceListServlet</servlet-name>
+        <url-pattern>/accounting/invoices</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>InvoiceCreateServlet</servlet-name>
+        <servlet-class>Controller.InvoiceCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>InvoiceCreateServlet</servlet-name>
+        <url-pattern>/accounting/invoices/create</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>InvoiceViewServlet</servlet-name>
+        <servlet-class>Controller.InvoiceViewServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>InvoiceViewServlet</servlet-name>
+        <url-pattern>/accounting/invoices/view</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>InvoiceDeleteServlet</servlet-name>
+        <servlet-class>Controller.InvoiceDeleteServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>InvoiceDeleteServlet</servlet-name>
+        <url-pattern>/accounting/invoices/delete</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>PaymentAddServlet</servlet-name>
+        <servlet-class>Controller.PaymentAddServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PaymentAddServlet</servlet-name>
+        <url-pattern>/accounting/payments/add</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RevenueReportServlet</servlet-name>
+        <servlet-class>Controller.RevenueReportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RevenueReportServlet</servlet-name>
+        <url-pattern>/accounting/reports/revenue</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== API ===== -->
+    <servlet>
+        <servlet-name>PayOsWebhookServlet</servlet-name>
+        <servlet-class>Controller.PayOsWebhookServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PayOsWebhookServlet</servlet-name>
+        <url-pattern>/api/payos/webhook</url-pattern>
+    </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>login</welcome-file>
+    </welcome-file-list>
+</web-app>

@@ -6,10 +6,21 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClassDAO extends DBContext {
+    public static final class DateRange {
+        public final LocalDate startDate;
+        public final LocalDate endDate;
+
+        public DateRange(LocalDate startDate, LocalDate endDate) {
+            this.startDate = startDate;
+            this.endDate = endDate;
+        }
+    }
+
     public List<CenterClass> listAll(String statusFilter, String q) throws Exception {
         String sql = """
                 SELECT c.class_id, c.class_code, c.class_name, c.capacity, c.start_date, c.end_date, c.status,
@@ -42,6 +53,67 @@ public class ClassDAO extends DBContext {
             }
         }
         return result;
+    }
+
+    public List<CenterClass> listOpenForStudent(String q) throws Exception {
+        String sql = """
+                SELECT c.class_id, c.class_code, c.class_name, c.capacity, c.start_date, c.end_date, c.status,
+                       c.course_id, cr.course_name, cr.standard_fee,
+                       c.teacher_id, t.full_name AS teacher_name,
+                       c.room_id, r.room_name,
+                       (SELECT COUNT(*) FROM dbo.enrollments e WHERE e.class_id = c.class_id AND e.status = N'ACTIVE') AS active_enroll_count
+                FROM dbo.classes c
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                LEFT JOIN dbo.teachers t ON c.teacher_id = t.teacher_id
+                LEFT JOIN dbo.rooms r ON c.room_id = r.room_id
+                WHERE c.status = N'OPEN'
+                  AND c.start_date IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM dbo.class_schedules cs WHERE cs.class_id = c.class_id)
+                  AND (? IS NULL OR c.class_code LIKE ? OR c.class_name LIKE ? OR cr.course_name LIKE ?)
+                ORDER BY c.class_id ASC
+                """;
+        List<CenterClass> result = new ArrayList<>();
+        String like = q == null ? null : "%" + q + "%";
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, q);
+            ps.setString(2, like);
+            ps.setString(3, like);
+            ps.setString(4, like);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.add(map(rs));
+            }
+        }
+        return result;
+    }
+
+    public DateRange resolveDateRange(int classId) throws Exception {
+        String sql = """
+                SELECT c.start_date, c.end_date, cr.duration_weeks
+                FROM dbo.classes c
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                WHERE c.class_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, classId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                Date startD = rs.getDate("start_date");
+                Date endD = rs.getDate("end_date");
+                if (startD == null) return null;
+                LocalDate start = startD.toLocalDate();
+                LocalDate end;
+                if (endD != null) {
+                    end = endD.toLocalDate();
+                } else {
+                    int weeks = rs.getInt("duration_weeks");
+                    if (weeks <= 0) weeks = 1;
+                    end = start.plusDays((long) weeks * 7L - 1L);
+                }
+                return new DateRange(start, end);
+            }
+        }
     }
 
     public CenterClass findById(int classId) throws Exception {

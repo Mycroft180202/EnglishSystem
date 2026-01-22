@@ -212,10 +212,11 @@ CREATE TABLE dbo.class_schedules (
     CONSTRAINT FK_class_schedules_rooms FOREIGN KEY (room_id) REFERENCES dbo.rooms(room_id),
     CONSTRAINT FK_class_schedules_teachers FOREIGN KEY (teacher_id) REFERENCES dbo.teachers(teacher_id),
     CONSTRAINT CK_class_schedules_dow CHECK (day_of_week BETWEEN 1 AND 7),
-    CONSTRAINT UQ_class_schedules_class UNIQUE (class_id, day_of_week, slot_id),
-    CONSTRAINT UQ_class_schedules_room UNIQUE (day_of_week, slot_id, room_id),
-    CONSTRAINT UQ_class_schedules_teacher UNIQUE (day_of_week, slot_id, teacher_id)
+    CONSTRAINT UQ_class_schedules_class UNIQUE (class_id, day_of_week, slot_id)
 );
+
+CREATE INDEX IX_class_schedules_room_dow_slot ON dbo.class_schedules(room_id, day_of_week, slot_id);
+CREATE INDEX IX_class_schedules_teacher_dow_slot ON dbo.class_schedules(teacher_id, day_of_week, slot_id);
 
 /* =========================
    Enrollment / Fees / Payments
