@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <div class="p-3">
@@ -77,6 +77,9 @@
     <c:if test="${sessionScope.authUser != null && sessionScope.authUser.roleCodes.contains('STUDENT')}">
         <div class="app-nav-title">Học viên</div>
         <div class="app-nav-section">
+            <a class="app-nav-link ${param.active == 'student-timetable' ? 'active' : ''}" href="${pageContext.request.contextPath}/student/timetable">
+                <i class="bi bi-calendar3"></i><span>Lịch học</span>
+            </a>
             <a class="app-nav-link ${param.active == 'student-results' ? 'active' : ''}" href="${pageContext.request.contextPath}/student/results">
                 <i class="bi bi-bar-chart"></i><span>Kết quả</span>
             </a>

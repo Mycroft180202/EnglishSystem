@@ -2,8 +2,10 @@ package Controller;
 
 import DAO.ClassDAO;
 import DAO.EnrollmentDAO;
+import DAO.RoomDAO;
 import DAO.StudentDAO;
 import Model.CenterClass;
+import Model.Room;
 import Model.Student;
 import Util.Flash;
 import Util.FormToken;
@@ -20,6 +22,7 @@ public class EnrollmentCreateServlet extends HttpServlet {
     private final EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
     private final StudentDAO studentDAO = new StudentDAO();
     private final ClassDAO classDAO = new ClassDAO();
+    private final RoomDAO roomDAO = new RoomDAO();
     private static final String TOKEN_KEY = "enrollCreateToken";
 
     @Override
@@ -90,6 +93,44 @@ public class EnrollmentCreateServlet extends HttpServlet {
 
             int capacity = enrollmentDAO.getClassCapacity(classId);
             int activeCount = enrollmentDAO.countActiveByClass(classId);
+
+            if (c.getRoomId() == null) {
+                req.setAttribute("error", "Lớp chưa gán phòng học, không thể đăng ký.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+            Room room = roomDAO.findById(c.getRoomId());
+            if (room == null) {
+                req.setAttribute("error", "Phòng học của lớp không tồn tại, không thể đăng ký.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+            if (room.getCapacity() < capacity) {
+                req.setAttribute("error", "Sức chứa phòng (" + room.getCapacity() + ") nhỏ hơn sĩ số tối đa của lớp (" + capacity + "). Vui lòng đổi phòng hoặc giảm sĩ số.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
+            if (room.getCapacity() > 0 && activeCount >= room.getCapacity()) {
+                req.setAttribute("error", "Phòng học đã đủ sức chứa.");
+                req.setAttribute("studentId", studentId);
+                req.setAttribute("classId", classId);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadData(req);
+                req.getRequestDispatcher("/WEB-INF/views/consultant/enrollment_form.jsp").forward(req, resp);
+                return;
+            }
             if (capacity > 0 && activeCount >= capacity) {
                 req.setAttribute("error", "Lớp đã đủ sĩ số.");
                 req.setAttribute("studentId", studentId);
@@ -151,4 +192,3 @@ public class EnrollmentCreateServlet extends HttpServlet {
         }
     }
 }
-

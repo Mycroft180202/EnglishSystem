@@ -28,6 +28,24 @@ public class AssessmentDAO extends DBContext {
         return result;
     }
 
+    public Assessment findByCourseAndType(int courseId, String type) throws Exception {
+        String sql = """
+                SELECT TOP 1 assess_id, course_id, name, weight, max_score, type
+                FROM dbo.assessments
+                WHERE course_id = ? AND UPPER(type) = UPPER(?)
+                ORDER BY assess_id ASC
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, courseId);
+            ps.setString(2, type);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return map(rs);
+            }
+        }
+    }
+
     public Assessment findById(int assessId) throws Exception {
         String sql = "SELECT assess_id, course_id, name, weight, max_score, type FROM dbo.assessments WHERE assess_id = ?";
         try (Connection con = getConnection();

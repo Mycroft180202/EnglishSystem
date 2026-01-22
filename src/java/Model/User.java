@@ -14,6 +14,7 @@ public class User implements Serializable {
     private Instant createdAt;
     private Integer teacherId;
     private Integer studentId;
+    private boolean mustChangePassword;
     private final Set<String> roleCodes = new HashSet<>();
 
     public int getUserId() {
@@ -70,6 +71,14 @@ public class User implements Serializable {
 
     public void setStudentId(Integer studentId) {
         this.studentId = studentId;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 
     public Set<String> getRoleCodes() {

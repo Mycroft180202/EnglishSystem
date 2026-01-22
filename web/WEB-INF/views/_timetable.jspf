@@ -1,0 +1,410 @@
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
+
+<div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <a class="btn btn-outline-secondary" href="${prevUrl}">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        <div class="btn btn-outline-secondary disabled">
+            <t:date value="${weekStart}" pattern="dd/MM"/> - <t:date value="${weekEnd}" pattern="dd/MM"/>
+        </div>
+        <a class="btn btn-outline-secondary" href="${nextUrl}">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <form class="d-flex gap-2" method="get" action="${jumpAction}">
+            <c:if test="${not empty clazz}">
+                <input type="hidden" name="classId" value="${clazz.classId}">
+            </c:if>
+            <input class="form-control" type="date" name="date" value="${weekStart}">
+            <button class="btn btn-outline-primary" type="submit">Xem</button>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive timetable-wrap">
+    <table class="table table-bordered align-middle timetable">
+        <thead class="table-light">
+            <tr>
+                <th class="timetable-col-slot text-uppercase small text-muted">Slot</th>
+                <c:forEach items="${weekDays}" var="dayDate" varStatus="st">
+                    <th class="timetable-col-day text-center ${dayDate == today ? 'timetable-today' : ''}">
+                        <div class="small text-muted">
+                            <c:choose>
+                                <c:when test="${st.index==0}">MON</c:when>
+                                <c:when test="${st.index==1}">TUE</c:when>
+                                <c:when test="${st.index==2}">WED</c:when>
+                                <c:when test="${st.index==3}">THU</c:when>
+                                <c:when test="${st.index==4}">FRI</c:when>
+                                <c:when test="${st.index==5}">SAT</c:when>
+                                <c:otherwise>SUN</c:otherwise>
+                            </c:choose>
+                        </div>
+                        <div class="fw-semibold"><t:date value="${dayDate}" pattern="dd/MM"/></div>
+                    </th>
+                </c:forEach>
+            </tr>
+        </thead>
+        <tbody>
+            <c:forEach items="${slots}" var="sl">
+                <tr>
+                    <th class="timetable-col-slot">
+                        <div class="fw-semibold"><c:out value="${sl.name}"/></div>
+                        <div class="small text-muted"><c:out value="${sl.startTime}"/>-<c:out value="${sl.endTime}"/></div>
+                    </th>
+                    <c:forEach items="${weekDays}" var="dayDate">
+                        <c:set var="k" value="${sl.slotId}_${dayDate}"/>
+                        <c:set var="sess" value="${sessionMap[k]}"/>
+                        <td class="timetable-cell ${dayDate == today ? 'timetable-today' : ''}">
+                            <c:if test="${not empty sess}">
+                                <c:set var="cardClass" value="timetable-card timetable-card--upcoming"/>
+                                <c:if test="${not empty sess.attendanceStatus}">
+                                    <c:choose>
+                                        <c:when test="${sess.attendanceStatus == 'ABSENT'}">
+                                            <c:set var="cardClass" value="timetable-card timetable-card--absent"/>
+                                        </c:when>
+                                        <c:when test="${sess.attendanceStatus == 'EXCUSED'}">
+                                            <c:set var="cardClass" value="timetable-card timetable-card--excused"/>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <c:set var="cardClass" value="timetable-card timetable-card--done"/>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:if>
+                                <div class="${cardClass} js-session-card"
+                                     role="button"
+                                     tabindex="0"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#sessionDetailModal"
+                                     data-session-id="${sess.sessionId}"
+                                     data-session-no="${sess.sessionNo}"
+                                     data-session-date="${sess.sessionDate}"
+                                     data-session-status="${sess.status}"
+                                     data-attendance-status="${sess.attendanceStatus}"
+                                     data-attendance-marked-at="${sess.attendanceMarkedAt}"
+                                     data-course-name="${sess.courseName}"
+                                     data-class-code="${sess.classCode}"
+                                     data-class-name="${sess.className}"
+                                      data-teacher-name="${sess.teacherName}"
+                                      data-room="${empty sess.roomCode ? sess.roomName : sess.roomCode}"
+                                      data-slot-name="${sess.slotName}"
+                                      data-start-time="${sess.startTime}"
+                                      data-end-time="${sess.endTime}"
+                                      data-assess-type="${sess.assessType}"
+                                      data-assess-name="${sess.assessName}">
+                                     <div class="d-flex align-items-start justify-content-between">
+                                         <div class="fw-semibold text-primary">
+                                             <c:out value="${empty sess.classCode ? sess.className : sess.classCode}"/>
+                                         </div>
+                                         <c:if test="${not empty sess.assessType}">
+                                             <span class="badge text-bg-danger">
+                                                 <c:choose>
+                                                     <c:when test="${sess.assessType == 'TEST1' || sess.assessType == 'QUIZ'}">Test 1</c:when>
+                                                     <c:when test="${sess.assessType == 'TEST2' || sess.assessType == 'MIDTERM'}">Test 2</c:when>
+                                                     <c:otherwise>Final</c:otherwise>
+                                                 </c:choose>
+                                             </span>
+                                         </c:if>
+                                     </div>
+                                     <div class="small text-muted mt-1">
+                                         <i class="bi bi-clock"></i>
+                                         <span><c:out value="${sess.startTime}"/>-<c:out value="${sess.endTime}"/></span>
+                                     </div>
+                                    <div class="small text-muted mt-1">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <span>
+                                            <c:out value="${empty sess.roomCode ? sess.roomName : sess.roomCode}"/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </c:if>
+                        </td>
+                    </c:forEach>
+                </tr>
+            </c:forEach>
+            <c:if test="${empty slots}">
+                <tr>
+                    <td colspan="8" class="text-center text-muted">Ch&#432;a c&#243; khung gi&#7901;.</td>
+                </tr>
+            </c:if>
+</tbody>
+    </table>
+</div>
+
+<!-- Session detail modal -->
+<div class="modal fade" id="sessionDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content session-detail">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="modal-title mb-0">Chi ti&#7871;t bu&#7893;i h&#7885;c</h5>
+                    <span class="badge text-bg-light border" id="sd-sessionId">#</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="sd-status mb-3" id="sd-status">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-calendar-event text-primary" id="sd-statusIcon"></i>
+                            <div class="fw-semibold" id="sd-statusText">SCHEDULED</div>
+                        </div>
+                         <div class="small text-muted d-flex align-items-center gap-2">
+                             <i class="bi bi-clock-history"></i>
+                             <span>Record time:</span>
+                             <span id="sd-recordTime">-</span>
+                         </div>
+                     </div>
+                 </div>
+
+                <ul class="nav nav-pills gap-2 mb-3">
+                    <li class="nav-item">
+                        <button class="nav-link active" type="button">Chi ti&#7871;t l&#7899;p h&#7885;c</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" type="button" disabled>T&#224;i nguy&#234;n &amp; Li&#234;n k&#7871;t</button>
+                    </li>
+                </ul>
+
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <i class="bi bi-mortarboard text-primary"></i>
+                                    <div class="fw-semibold">Course Information</div>
+                                 </div>
+                                 <div class="sd-course card bg-light border-0 p-3 mb-3">
+                                     <div class="fw-semibold" id="sd-courseName">-</div>
+                                     <div class="text-muted small" id="sd-classCode">-</div>
+                                 </div>
+                                 <div class="sd-kv">
+                                     <div class="sd-kv-row">
+                                         <div class="sd-kv-label"><i class="bi bi-calendar3"></i> Date</div>
+                                         <div class="sd-kv-value" id="sd-date">-</div>
+                                     </div>
+                                     <div class="sd-kv-row">
+                                         <div class="sd-kv-label"><i class="bi bi-hash"></i> Slot</div>
+                                         <div class="sd-kv-value" id="sd-slot">-</div>
+                                     </div>
+                                     <div class="sd-kv-row">
+                                         <div class="sd-kv-label"><i class="bi bi-clock"></i> Time</div>
+                                         <div class="sd-kv-value" id="sd-time">-</div>
+                                     </div>
+                                     <div class="sd-kv-row">
+                                         <div class="sd-kv-label"><i class="bi bi-geo-alt"></i> Room</div>
+                                         <div class="sd-kv-value" id="sd-room">-</div>
+                                     </div>
+                                     <div class="sd-kv-row">
+                                         <div class="sd-kv-label"><i class="bi bi-patch-check"></i> Ki&#7875;m tra</div>
+                                         <div class="sd-kv-value" id="sd-assess">-</div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <i class="bi bi-people text-primary"></i>
+                                    <div class="fw-semibold">People</div>
+                                </div>
+                                 <div class="sd-people-box mb-3">
+                                     <div class="small text-muted mb-1">Instructor</div>
+                                     <div class="d-flex align-items-center gap-2">
+                                         <div class="sd-avatar">T</div>
+                                         <div class="fw-semibold" id="sd-teacher">-</div>
+                                     </div>
+                                 </div>
+                                 <div class="sd-people-box">
+                                     <div class="small text-muted mb-1">Student Group</div>
+                                     <div class="d-flex align-items-center gap-2">
+                                         <div class="sd-avatar">C</div>
+                                         <div class="fw-semibold" id="sd-group">-</div>
+                                     </div>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <c:if test="${not empty sessionAssessBase}">
+                    <form class="d-flex flex-wrap gap-2 me-auto align-items-center" method="post" action="${sessionAssessBase}"
+                          onsubmit="this.querySelectorAll('button').forEach(function(b){b.disabled=true;});">
+                        <input type="hidden" name="formToken" value="${sessionAssessToken}">
+                        <input type="hidden" name="sessionId" id="sd-testSessionId" value="">
+                        <input type="hidden" name="action" id="sd-testAction" value="assign">
+                        <input type="hidden" name="date" value="${weekStart}">
+                        <select class="form-select form-select-sm" style="min-width: 180px;" name="type" id="sd-testType">
+                            <option value="">-- Ki&#7875;m tra --</option>
+                            <option value="TEST1">Test 1</option>
+                            <option value="TEST2">Test 2</option>
+                            <option value="FINAL">Final</option>
+                        </select>
+                        <button class="btn btn-outline-danger btn-sm" type="submit"
+                                onclick="document.getElementById('sd-testAction').value='assign'">G&#225;n</button>
+                        <button class="btn btn-outline-secondary btn-sm" type="submit"
+                                onclick="document.getElementById('sd-testAction').value='clear'">H&#7911;y</button>
+                    </form>
+                </c:if>
+                <c:if test="${not empty attendanceEditBase}">
+                    <a class="btn btn-primary" id="sd-attendanceBtn" href="#">${empty attendanceEditLabel ? '&#272;i&#7875;m danh' : attendanceEditLabel}</a>
+                </c:if>
+                <c:if test="${not empty absenceRequestBase}">
+                    <a class="btn btn-outline-primary" id="sd-absenceBtn" href="#">Xin ph&#233;p ngh&#7881;</a>
+                </c:if>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">&#272;&#243;ng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        function viWeekday(dateObj) {
+            try { return dateObj.toLocaleDateString('vi-VN', { weekday: 'long' }); } catch (e) { return ''; }
+        }
+        function viDate(dateObj) {
+            try { return dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return ''; }
+        }
+        function setText(id, val) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = (val && String(val).trim()) ? String(val) : '-';
+        }
+        function openDetail(card) {
+            if (!card) return;
+
+            var attendanceStatus = card.dataset.attendanceStatus || '';
+            var sessionStatus = card.dataset.sessionStatus || '';
+            var status = (attendanceStatus && attendanceStatus.trim()) ? attendanceStatus.trim() : sessionStatus.trim();
+            var rawDate = card.dataset.sessionDate;
+
+            var sessionIdEl = document.getElementById('sd-sessionId');
+            if (sessionIdEl) sessionIdEl.textContent = '#' + (card.dataset.sessionNo || card.dataset.sessionId || '');
+
+            setText('sd-courseName', card.dataset.courseName);
+            setText('sd-classCode', card.dataset.classCode || card.dataset.className);
+            setText('sd-teacher', card.dataset.teacherName);
+            setText('sd-group', card.dataset.classCode || card.dataset.className);
+            setText('sd-room', card.dataset.room);
+
+            (function () {
+                var rawType = (card.dataset.assessType || '').trim().toUpperCase();
+                var name = (card.dataset.assessName || '').trim();
+                var label = '-';
+                if (rawType) {
+                    if (rawType === 'QUIZ') rawType = 'TEST1';
+                    if (rawType === 'MIDTERM') rawType = 'TEST2';
+                    if (rawType === 'TEST1') label = 'Test 1';
+                    else if (rawType === 'TEST2') label = 'Test 2';
+                    else if (rawType === 'FINAL') label = 'Final';
+                    else label = rawType;
+                }
+                if (name) label = label + ' - ' + name;
+                setText('sd-assess', rawType ? label : '-');
+
+                var sel = document.getElementById('sd-testType');
+                if (sel) sel.value = (rawType === 'TEST1' || rawType === 'TEST2' || rawType === 'FINAL') ? rawType : '';
+                var sid = document.getElementById('sd-testSessionId');
+                if (sid) sid.value = card.dataset.sessionId || '';
+            })();
+            setText('sd-slot', card.dataset.slotName);
+            setText('sd-time', (card.dataset.startTime || '-') + '-' + (card.dataset.endTime || '-'));
+            setText('sd-recordTime', card.dataset.attendanceMarkedAt);
+
+            if (rawDate) {
+                var d = new Date(rawDate + 'T00:00:00');
+                setText('sd-date', (viWeekday(d) ? (viWeekday(d) + ', ') : '') + viDate(d));
+            } else {
+                setText('sd-date', null);
+            }
+
+            var attBtn = document.getElementById('sd-attendanceBtn');
+            if (attBtn) {
+                var base = '${attendanceEditBase}';
+                var onlyToday = ('${attendanceEditOnlyToday}' === 'true');
+                if (base && card.dataset.sessionId) {
+                    attBtn.href = base + card.dataset.sessionId;
+                }
+                if (onlyToday && rawDate) {
+                    var todayStr = '${today}';
+                    if (todayStr && rawDate !== todayStr) {
+                        attBtn.classList.add('disabled');
+                        attBtn.setAttribute('aria-disabled', 'true');
+                        attBtn.setAttribute('tabindex', '-1');
+                    } else {
+                        attBtn.classList.remove('disabled');
+                        attBtn.removeAttribute('aria-disabled');
+                        attBtn.removeAttribute('tabindex');
+                    }
+                }
+            }
+
+            var absBtn = document.getElementById('sd-absenceBtn');
+            if (absBtn) {
+                var base2 = '${absenceRequestBase}';
+                if (base2 && card.dataset.sessionId) {
+                    absBtn.href = base2 + card.dataset.sessionId;
+                }
+                if (rawDate && card.dataset.startTime) {
+                    var now = new Date();
+                    var parts = String(card.dataset.startTime).split(':');
+                    var hh = parseInt(parts[0] || '0', 10);
+                    var mm = parseInt(parts[1] || '0', 10);
+                    var startDt = new Date(rawDate + 'T00:00:00');
+                    startDt.setHours(hh, mm, 0, 0);
+                    var minOk = new Date(startDt.getTime() - 2 * 60 * 60 * 1000);
+                    if (now > minOk) {
+                        absBtn.classList.add('disabled');
+                        absBtn.setAttribute('aria-disabled', 'true');
+                        absBtn.setAttribute('tabindex', '-1');
+                        absBtn.title = 'Chỉ được gửi trước buổi học ít nhất 2 tiếng';
+                    } else {
+                        absBtn.classList.remove('disabled');
+                        absBtn.removeAttribute('aria-disabled');
+                        absBtn.removeAttribute('tabindex');
+                        absBtn.removeAttribute('title');
+                    }
+                }
+            }
+
+            var statusEl = document.getElementById('sd-status');
+            var iconEl = document.getElementById('sd-statusIcon');
+            var textEl = document.getElementById('sd-statusText');
+            if (textEl) textEl.textContent = status || 'SCHEDULED';
+
+            if (statusEl) {
+                statusEl.classList.remove('sd-status--absent', 'sd-status--done', 'sd-status--upcoming');
+                if (attendanceStatus === 'ABSENT') statusEl.classList.add('sd-status--absent');
+                else if (attendanceStatus === 'EXCUSED') statusEl.classList.add('sd-status--excused');
+                else if (attendanceStatus) statusEl.classList.add('sd-status--done');
+                else statusEl.classList.add('sd-status--upcoming');
+            }
+            if (iconEl) {
+                iconEl.className = 'bi';
+                if (attendanceStatus === 'ABSENT') iconEl.classList.add('bi-x-circle', 'text-danger');
+                else if (attendanceStatus === 'EXCUSED') iconEl.classList.add('bi-check-circle', 'text-warning');
+                else if (attendanceStatus) iconEl.classList.add('bi-check-circle', 'text-success');
+                else iconEl.classList.add('bi-calendar-event', 'text-primary');
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            var card = e.target.closest('.js-session-card');
+            if (!card) return;
+            openDetail(card);
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            var card = e.target.closest('.js-session-card');
+            if (!card) return;
+            openDetail(card);
+        });
+    })();
+</script>

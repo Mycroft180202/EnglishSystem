@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
@@ -27,6 +27,10 @@
         </div>
     </form>
 
+    <div class="alert alert-info">
+        Trọng số cố định: Test 1 = 20%, Test 2 = 30%, Final = 40%. Chuyên cần = 10% tính tự động từ điểm danh.
+    </div>
+
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
             <thead>
@@ -44,8 +48,23 @@
                     <tr>
                         <td class="text-muted"><c:out value="${st.count}"/></td>
                         <td><c:out value="${a.name}"/></td>
-                        <td><c:out value="${a.type}"/></td>
-                        <td><c:out value="${a.weight}"/></td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${a.type == 'TEST1' || a.type == 'QUIZ'}">Test 1</c:when>
+                                <c:when test="${a.type == 'TEST2' || a.type == 'MIDTERM'}">Test 2</c:when>
+                                <c:when test="${a.type == 'FINAL'}">Final Test</c:when>
+                                <c:otherwise><c:out value="${a.type}"/></c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${a.type == 'TEST1' || a.type == 'QUIZ'}">20</c:when>
+                                <c:when test="${a.type == 'TEST2' || a.type == 'MIDTERM'}">30</c:when>
+                                <c:when test="${a.type == 'FINAL'}">40</c:when>
+                                <c:otherwise><c:out value="${a.weight}"/></c:otherwise>
+                            </c:choose>
+                            %
+                        </td>
                         <td><c:out value="${a.maxScore}"/></td>
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary" href="${pageContext.request.contextPath}/admin/assessments/edit?id=${a.assessId}">Sửa</a>

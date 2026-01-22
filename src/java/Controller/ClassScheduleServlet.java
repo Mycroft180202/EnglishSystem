@@ -3,6 +3,7 @@ package Controller;
 import DAO.ClassDAO;
 import DAO.ClassScheduleDAO;
 import DAO.ClassSessionDAO;
+import DAO.EnrollmentDAO;
 import DAO.RoomDAO;
 import DAO.TeacherDAO;
 import DAO.TimeSlotDAO;
@@ -30,6 +31,7 @@ public class ClassScheduleServlet extends HttpServlet {
     private final TimeSlotDAO timeSlotDAO = new TimeSlotDAO();
     private final TeacherDAO teacherDAO = new TeacherDAO();
     private final RoomDAO roomDAO = new RoomDAO();
+    private final EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
     private static final String TOKEN_KEY = "classScheduleToken";
 
     @Override
@@ -110,6 +112,24 @@ public class ClassScheduleServlet extends HttpServlet {
                     return;
                 }
 
+                Room r = roomDAO.findById(s.getRoomId());
+                int activeCount = enrollmentDAO.countActiveByClass(classId);
+                if (r == null) {
+                    Flash.error(req, "Phòng học không tồn tại.");
+                    resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                    return;
+                }
+                if (r.getCapacity() < clazz.getCapacity()) {
+                    Flash.error(req, "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho sĩ số tối đa của lớp (" + clazz.getCapacity() + ").");
+                    resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                    return;
+                }
+                if (r.getCapacity() < activeCount) {
+                    Flash.error(req, "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho số học viên hiện tại (" + activeCount + ").");
+                    resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                    return;
+                }
+
                 try {
                     scheduleDAO.update(s);
                     if ("1".equals(trim(req.getParameter("updateSessions")))) {
@@ -153,6 +173,24 @@ public class ClassScheduleServlet extends HttpServlet {
             String validation = validate(s);
             if (validation != null) {
                 Flash.error(req, validation);
+                resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                return;
+            }
+
+            Room r = roomDAO.findById(s.getRoomId());
+            int activeCount = enrollmentDAO.countActiveByClass(classId);
+            if (r == null) {
+                Flash.error(req, "Phòng học không tồn tại.");
+                resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                return;
+            }
+            if (r.getCapacity() < clazz.getCapacity()) {
+                Flash.error(req, "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho sĩ số tối đa của lớp (" + clazz.getCapacity() + ").");
+                resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                return;
+            }
+            if (r.getCapacity() < activeCount) {
+                Flash.error(req, "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho số học viên hiện tại (" + activeCount + ").");
                 resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
                 return;
             }

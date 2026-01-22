@@ -2,6 +2,7 @@ package Controller;
 
 import DAO.UserDAO;
 import Model.User;
+import Util.Flash;
 import Util.PasswordUtil;
 import Util.SecurityUtil;
 import jakarta.servlet.ServletException;
@@ -26,6 +27,7 @@ public class ChangePasswordServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
+        Flash.consume(req);
         req.getRequestDispatcher(VIEW).forward(req, resp);
     }
 
@@ -71,6 +73,9 @@ public class ChangePasswordServlet extends HttpServlet {
 
             String newHash = PasswordUtil.hashPassword(next.toCharArray());
             userDAO.updatePassword(user.getUserId(), newHash);
+
+            user.setMustChangePassword(false);
+            req.getSession(true).setAttribute(SecurityUtil.SESSION_USER, user);
 
             req.setAttribute("message", "Đổi mật khẩu thành công.");
             req.getRequestDispatcher(VIEW).forward(req, resp);

@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
@@ -20,13 +20,24 @@
         <div class="alert alert-danger"><c:out value="${flashError}"/></div>
     </c:if>
 
+    <div class="alert alert-info">
+        Nhập điểm theo từng đầu điểm: Test 1 (20%), Test 2 (30%), Final (40%). Chuyên cần 10% tính tự động từ điểm danh.
+    </div>
+
     <form method="get" action="${pageContext.request.contextPath}/teacher/scores" class="row g-2 mb-3">
         <input type="hidden" name="classId" value="${clazz.classId}">
         <div class="col-auto">
             <select class="form-select" name="assessId" onchange="this.form.submit()">
                 <c:forEach items="${assessments}" var="a">
                     <option value="${a.assessId}" ${assessId == a.assessId ? 'selected' : ''}>
-                        <c:out value="${a.name}"/> (<c:out value="${a.type}"/>)
+                        <c:out value="${a.name}"/> (
+                        <c:choose>
+                            <c:when test="${a.type == 'TEST1' || a.type == 'QUIZ'}">Test 1</c:when>
+                            <c:when test="${a.type == 'TEST2' || a.type == 'MIDTERM'}">Test 2</c:when>
+                            <c:when test="${a.type == 'FINAL'}">Final</c:when>
+                            <c:otherwise><c:out value="${a.type}"/></c:otherwise>
+                        </c:choose>
+                        )
                     </option>
                 </c:forEach>
             </select>

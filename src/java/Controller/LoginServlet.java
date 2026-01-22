@@ -74,6 +74,13 @@ public class LoginServlet extends HttpServlet {
 
             HttpSession session = req.getSession(true);
             session.setAttribute(SecurityUtil.SESSION_USER, user);
+
+            if (user.isMustChangePassword()) {
+                Flash.success(req, "Vui lòng đổi mật khẩu trước khi sử dụng hệ thống.");
+                resp.sendRedirect(req.getContextPath() + "/app/change-password");
+                return;
+            }
+
             resp.sendRedirect(req.getContextPath() + "/app/home");
         } catch (Exception ex) {
             throw new ServletException(ex);

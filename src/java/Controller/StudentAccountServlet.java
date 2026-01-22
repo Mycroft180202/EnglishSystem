@@ -13,18 +13,22 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.SecureRandom;
 
 @WebServlet({"/admin/students/account", "/consultant/students/account"})
 public class StudentAccountServlet extends HttpServlet {
     private final StudentDAO studentDAO = new StudentDAO();
     private final UserDAO userDAO = new UserDAO();
     private static final String TOKEN_KEY = "studentAccountToken";
+    private static final SecureRandom RNG = new SecureRandom();
+    private static final String DEFAULT_PASSWORD = "12345678";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             req.setCharacterEncoding("UTF-8");
             resp.setCharacterEncoding("UTF-8");
+            Flash.consume(req);
 
             int studentId = parseInt(req.getParameter("studentId"), -1);
             Student s = studentId > 0 ? studentDAO.findById(studentId) : null;
@@ -72,43 +76,28 @@ public class StudentAccountServlet extends HttpServlet {
                 return;
             }
 
-            String username = trim(req.getParameter("username"));
-            String password = req.getParameter("password");
-            String confirm = req.getParameter("confirm");
-
-            String validation = validate(username, password, confirm);
-            if (validation != null) {
-                req.setAttribute("error", validation);
-                req.setAttribute("student", s);
-                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
-                req.getRequestDispatcher("/WEB-INF/views/admin/student_account.jsp").forward(req, resp);
-                return;
-            }
-
-            if (userDAO.findByUsername(username) != null) {
-                req.setAttribute("error", "Username đã tồn tại.");
-                req.setAttribute("student", s);
-                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
-                req.getRequestDispatcher("/WEB-INF/views/admin/student_account.jsp").forward(req, resp);
-                return;
-            }
-
-            String hash = PasswordUtil.hashPassword(password.toCharArray());
+            String username = generateUniqueUsername("student", 6);
+            String hash = PasswordUtil.hashPassword(DEFAULT_PASSWORD.toCharArray());
             userDAO.createStudentUser(studentId, username, hash);
-            Flash.success(req, "Đã tạo tài khoản học viên. Học viên đăng nhập bằng role STUDENT.");
-            resp.sendRedirect(req.getContextPath() + basePath(req) + "/students");
+            Flash.success(req, "Đã tạo tài khoản: " + username + " / " + DEFAULT_PASSWORD + ". Bắt buộc đổi mật khẩu khi đăng nhập lần đầu.");
+            resp.sendRedirect(req.getContextPath() + basePath(req) + "/students/account?studentId=" + studentId);
         } catch (Exception ex) {
             throw new ServletException(ex);
         }
     }
 
-    private static String validate(String username, String password, String confirm) {
-        if (username == null || username.isBlank()) return "Vui lòng nhập username.";
-        if (username.length() > 50) return "Username tối đa 50 ký tự.";
-        if (password == null || password.isBlank()) return "Vui lòng nhập password.";
-        if (password.length() < 8) return "Password tối thiểu 8 ký tự.";
-        if (!password.equals(confirm)) return "Xác nhận mật khẩu không khớp.";
-        return null;
+    private String generateUniqueUsername(String prefix, int digits) throws Exception {
+        for (int attempt = 0; attempt < 1000; attempt++) {
+            String username = prefix + randomDigits(digits);
+            if (userDAO.findByUsername(username) == null) return username;
+        }
+        throw new IllegalStateException("Unable to generate unique username");
+    }
+
+    private static String randomDigits(int digits) {
+        StringBuilder sb = new StringBuilder(digits);
+        for (int i = 0; i < digits; i++) sb.append(RNG.nextInt(10));
+        return sb.toString();
     }
 
     private static String basePath(HttpServletRequest req) {
@@ -130,4 +119,3 @@ public class StudentAccountServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 }
-

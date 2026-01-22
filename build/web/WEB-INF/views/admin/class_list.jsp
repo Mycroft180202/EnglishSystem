@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
@@ -65,6 +65,8 @@
                                href="${pageContext.request.contextPath}/admin/classes/edit?id=${cl.classId}">Sửa</a>
                             <a class="btn btn-sm btn-outline-secondary"
                                href="${pageContext.request.contextPath}/admin/class-schedules?classId=${cl.classId}">Lịch</a>
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="${pageContext.request.contextPath}/admin/timetable?classId=${cl.classId}">TKB</a>
                             <div class="btn-group btn-group-sm" role="group">
                                 <form method="post" action="${pageContext.request.contextPath}/admin/classes/status">
                                     <input type="hidden" name="id" value="${cl.classId}">

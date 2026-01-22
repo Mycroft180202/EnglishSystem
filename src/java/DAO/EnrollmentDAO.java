@@ -89,6 +89,26 @@ public class EnrollmentDAO extends DBContext {
         }
     }
 
+    public Integer findEnrollIdForStudentAndSession(int studentId, int sessionId) throws Exception {
+        String sql = """
+                SELECT TOP 1 e.enroll_id
+                FROM dbo.class_sessions cs
+                JOIN dbo.enrollments e ON cs.class_id = e.class_id
+                WHERE cs.session_id = ?
+                  AND e.student_id = ?
+                  AND e.status IN (N'ACTIVE', N'COMPLETED')
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, sessionId);
+            ps.setInt(2, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return rs.getInt("enroll_id");
+            }
+        }
+    }
+
     public int create(int studentId, int classId, String status) throws Exception {
         String sql = """
                 INSERT INTO dbo.enrollments(student_id, class_id, status)

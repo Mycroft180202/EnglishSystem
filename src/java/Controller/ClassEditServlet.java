@@ -4,6 +4,7 @@ import DAO.ClassDAO;
 import DAO.ClassScheduleDAO;
 import DAO.ClassSessionDAO;
 import DAO.CourseDAO;
+import DAO.EnrollmentDAO;
 import DAO.RoomDAO;
 import DAO.TeacherDAO;
 import Model.CenterClass;
@@ -29,6 +30,7 @@ public class ClassEditServlet extends HttpServlet {
     private final CourseDAO courseDAO = new CourseDAO();
     private final TeacherDAO teacherDAO = new TeacherDAO();
     private final RoomDAO roomDAO = new RoomDAO();
+    private final EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
     private static final String TOKEN_KEY = "classEditToken";
 
     @Override
@@ -86,6 +88,58 @@ public class ClassEditServlet extends HttpServlet {
                 req.setAttribute("mode", "edit");
                 req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
                 return;
+            }
+
+            int activeCount = enrollmentDAO.countActiveByClass(id);
+            if (c.getCapacity() < activeCount) {
+                req.setAttribute("error", "Không thể giảm sĩ số tối đa xuống " + c.getCapacity() + " vì lớp đang có " + activeCount + " học viên đang học.");
+                req.setAttribute("clazz", c);
+                req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                loadSelectData(req);
+                req.setAttribute("mode", "edit");
+                req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                return;
+            }
+
+            if (c.getRoomId() == null) {
+                if (activeCount > 0) {
+                    req.setAttribute("error", "Lớp đang có học viên nên không thể bỏ phòng học.");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "edit");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
+                }
+            } else {
+                Room r = roomDAO.findById(c.getRoomId());
+                if (r == null) {
+                    req.setAttribute("error", "Phòng học không tồn tại.");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "edit");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
+                }
+                if (r.getCapacity() < c.getCapacity()) {
+                    req.setAttribute("error", "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho sĩ số tối đa của lớp (" + c.getCapacity() + ").");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "edit");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
+                }
+                if (r.getCapacity() < activeCount) {
+                    req.setAttribute("error", "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho số học viên hiện tại (" + activeCount + ").");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "edit");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
+                }
             }
 
             CenterClass byCode = classDAO.findByCode(c.getClassCode());

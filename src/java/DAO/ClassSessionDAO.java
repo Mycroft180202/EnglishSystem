@@ -12,6 +12,36 @@ import java.util.List;
 import java.time.LocalDate;
 
 public class ClassSessionDAO extends DBContext {
+    public ClassSession findByIdExtended(int sessionId) throws Exception {
+        String sql = """
+                SELECT s.session_id, s.class_id, s.session_date, s.slot_id, s.room_id, s.teacher_id, s.status,
+                       ROW_NUMBER() OVER (PARTITION BY s.class_id ORDER BY s.session_date, ts.start_time, s.session_id) AS session_no,
+                       c.class_code, c.class_name, cr.course_id, cr.course_name,
+                       ts.name AS slot_name, CONVERT(varchar(5), ts.start_time, 108) AS start_time,
+                       CONVERT(varchar(5), ts.end_time, 108) AS end_time,
+                       r.room_name, r.room_code,
+                       t.full_name AS teacher_name,
+                       a.assess_id, a.type AS assess_type, a.name AS assess_name
+                FROM dbo.class_sessions s
+                JOIN dbo.classes c ON s.class_id = c.class_id
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                JOIN dbo.time_slots ts ON s.slot_id = ts.slot_id
+                JOIN dbo.rooms r ON s.room_id = r.room_id
+                LEFT JOIN dbo.teachers t ON s.teacher_id = t.teacher_id
+                LEFT JOIN dbo.session_assessments sa ON sa.session_id = s.session_id
+                LEFT JOIN dbo.assessments a ON a.assess_id = sa.assess_id
+                WHERE s.session_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, sessionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return mapExtended(rs);
+            }
+        }
+    }
+
     public List<ClassSession> listByClass(int classId) throws Exception {
         String sql = """
                 SELECT s.session_id, s.class_id, s.session_date, s.slot_id, s.room_id, s.teacher_id, s.status,
@@ -55,6 +85,141 @@ public class ClassSessionDAO extends DBContext {
             ps.setInt(1, teacherId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) result.add(map(rs));
+            }
+        }
+        return result;
+    }
+
+    public List<ClassSession> listByTeacherInRange(int teacherId, LocalDate fromDate, LocalDate toDate) throws Exception {
+        String sql = """
+                WITH base AS (
+                    SELECT s.session_id, s.class_id, s.session_date, s.slot_id, s.room_id, s.teacher_id, s.status,
+                           ROW_NUMBER() OVER (PARTITION BY s.class_id ORDER BY s.session_date, ts.start_time, s.session_id) AS session_no,
+                           c.class_code, c.class_name, cr.course_id, cr.course_name,
+                           ts.name AS slot_name, CONVERT(varchar(5), ts.start_time, 108) AS start_time,
+                           CONVERT(varchar(5), ts.end_time, 108) AS end_time,
+                           ts.start_time AS slot_start_time,
+                           r.room_name, r.room_code,
+                           t.full_name AS teacher_name,
+                           a.assess_id, a.type AS assess_type, a.name AS assess_name
+                    FROM dbo.class_sessions s
+                    JOIN dbo.classes c ON s.class_id = c.class_id
+                    JOIN dbo.courses cr ON c.course_id = cr.course_id
+                    JOIN dbo.time_slots ts ON s.slot_id = ts.slot_id
+                    JOIN dbo.rooms r ON s.room_id = r.room_id
+                    LEFT JOIN dbo.teachers t ON s.teacher_id = t.teacher_id
+                    LEFT JOIN dbo.session_assessments sa ON sa.session_id = s.session_id
+                    LEFT JOIN dbo.assessments a ON a.assess_id = sa.assess_id
+                )
+                SELECT session_id, class_id, session_date, slot_id, room_id, teacher_id, status,
+                       session_no, class_code, class_name, course_id, course_name,
+                       slot_name, start_time, end_time, room_name, room_code, teacher_name,
+                       assess_id, assess_type, assess_name
+                FROM base
+                WHERE teacher_id = ?
+                  AND session_date >= ?
+                  AND session_date <= ?
+                ORDER BY session_date, slot_start_time, session_id
+                """;
+        List<ClassSession> result = new ArrayList<>();
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, teacherId);
+            ps.setDate(2, Date.valueOf(fromDate));
+            ps.setDate(3, Date.valueOf(toDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.add(mapExtended(rs));
+            }
+        }
+        return result;
+    }
+
+    public List<ClassSession> listByClassInRange(int classId, LocalDate fromDate, LocalDate toDate) throws Exception {
+        String sql = """
+                WITH base AS (
+                    SELECT s.session_id, s.class_id, s.session_date, s.slot_id, s.room_id, c.teacher_id, s.status,
+                           ROW_NUMBER() OVER (PARTITION BY s.class_id ORDER BY s.session_date, ts.start_time, s.session_id) AS session_no,
+                           c.class_code, c.class_name, cr.course_id, cr.course_name,
+                           ts.name AS slot_name, CONVERT(varchar(5), ts.start_time, 108) AS start_time,
+                           CONVERT(varchar(5), ts.end_time, 108) AS end_time,
+                           ts.start_time AS slot_start_time,
+                           r.room_name, r.room_code,
+                           t.full_name AS teacher_name,
+                           a.assess_id, a.type AS assess_type, a.name AS assess_name
+                    FROM dbo.class_sessions s
+                    JOIN dbo.classes c ON s.class_id = c.class_id
+                    JOIN dbo.courses cr ON c.course_id = cr.course_id
+                    JOIN dbo.time_slots ts ON s.slot_id = ts.slot_id
+                    JOIN dbo.rooms r ON s.room_id = r.room_id
+                    LEFT JOIN dbo.teachers t ON c.teacher_id = t.teacher_id
+                    LEFT JOIN dbo.session_assessments sa ON sa.session_id = s.session_id
+                    LEFT JOIN dbo.assessments a ON a.assess_id = sa.assess_id
+                )
+                SELECT session_id, class_id, session_date, slot_id, room_id, teacher_id, status,
+                       session_no, class_code, class_name, course_id, course_name,
+                       slot_name, start_time, end_time, room_name, room_code, teacher_name,
+                       assess_id, assess_type, assess_name
+                FROM base
+                WHERE class_id = ?
+                  AND session_date >= ?
+                  AND session_date <= ?
+                ORDER BY session_date, slot_start_time, session_id
+                """;
+        List<ClassSession> result = new ArrayList<>();
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, classId);
+            ps.setDate(2, Date.valueOf(fromDate));
+            ps.setDate(3, Date.valueOf(toDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.add(mapExtended(rs));
+            }
+        }
+        return result;
+    }
+
+    public List<ClassSession> listByStudentInRange(int studentId, LocalDate fromDate, LocalDate toDate) throws Exception {
+        String sql = """
+                WITH base AS (
+                    SELECT s.session_id, s.class_id, s.session_date, s.slot_id, s.room_id, c.teacher_id, s.status,
+                           ROW_NUMBER() OVER (PARTITION BY s.class_id ORDER BY s.session_date, ts.start_time, s.session_id) AS session_no,
+                           c.class_code, c.class_name, cr.course_id, cr.course_name,
+                           ts.name AS slot_name, CONVERT(varchar(5), ts.start_time, 108) AS start_time,
+                           CONVERT(varchar(5), ts.end_time, 108) AS end_time,
+                           ts.start_time AS slot_start_time,
+                           r.room_name, r.room_code,
+                           t.full_name AS teacher_name,
+                           a.assess_id, a.type AS assess_type, a.name AS assess_name
+                    FROM dbo.class_sessions s
+                    JOIN dbo.classes c ON s.class_id = c.class_id
+                    JOIN dbo.courses cr ON c.course_id = cr.course_id
+                    JOIN dbo.time_slots ts ON s.slot_id = ts.slot_id
+                    JOIN dbo.rooms r ON s.room_id = r.room_id
+                    LEFT JOIN dbo.teachers t ON c.teacher_id = t.teacher_id
+                    LEFT JOIN dbo.session_assessments sa ON sa.session_id = s.session_id
+                    LEFT JOIN dbo.assessments a ON a.assess_id = sa.assess_id
+                )
+                SELECT b.session_id, b.class_id, b.session_date, b.slot_id, b.room_id, b.teacher_id, b.status,
+                       b.session_no, b.class_code, b.class_name, b.course_id, b.course_name,
+                       b.slot_name, b.start_time, b.end_time, b.room_name, b.room_code, b.teacher_name,
+                       b.assess_id, b.assess_type, b.assess_name,
+                       att.status AS attendance_status,
+                       FORMAT(att.marked_at, 'dd/MM/yyyy HH:mm:ss') AS attendance_marked_at
+                FROM base b
+                JOIN dbo.enrollments e ON e.class_id = b.class_id AND e.student_id = ? AND e.status IN (N'ACTIVE', N'COMPLETED')
+                LEFT JOIN dbo.attendance att ON att.session_id = b.session_id AND att.enroll_id = e.enroll_id
+                WHERE b.session_date >= ?
+                  AND b.session_date <= ?
+                ORDER BY b.session_date, b.slot_start_time, b.session_id
+                """;
+        List<ClassSession> result = new ArrayList<>();
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, studentId);
+            ps.setDate(2, Date.valueOf(fromDate));
+            ps.setDate(3, Date.valueOf(toDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.add(mapExtended(rs));
             }
         }
         return result;
@@ -188,6 +353,22 @@ public class ClassSessionDAO extends DBContext {
         s.setEndTime(rs.getString("end_time"));
         s.setRoomName(rs.getString("room_name"));
         s.setTeacherName(rs.getString("teacher_name"));
+        return s;
+    }
+
+    private static ClassSession mapExtended(ResultSet rs) throws Exception {
+        ClassSession s = map(rs);
+        try { s.setRoomCode(rs.getString("room_code")); } catch (Exception ignored) {}
+        try { s.setClassCode(rs.getString("class_code")); } catch (Exception ignored) {}
+        try { s.setClassName(rs.getString("class_name")); } catch (Exception ignored) {}
+        try { s.setCourseId(rs.getInt("course_id")); } catch (Exception ignored) {}
+        try { s.setCourseName(rs.getString("course_name")); } catch (Exception ignored) {}
+        try { s.setAssessId((Integer) rs.getObject("assess_id")); } catch (Exception ignored) {}
+        try { s.setAssessType(rs.getString("assess_type")); } catch (Exception ignored) {}
+        try { s.setAssessName(rs.getString("assess_name")); } catch (Exception ignored) {}
+        try { s.setAttendanceStatus(rs.getString("attendance_status")); } catch (Exception ignored) {}
+        try { s.setAttendanceMarkedAt(rs.getString("attendance_marked_at")); } catch (Exception ignored) {}
+        try { s.setSessionNo(rs.getInt("session_no")); } catch (Exception ignored) {}
         return s;
     }
 

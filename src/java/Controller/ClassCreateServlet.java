@@ -64,6 +64,27 @@ public class ClassCreateServlet extends HttpServlet {
                 return;
             }
 
+            if (c.getRoomId() != null) {
+                Room r = roomDAO.findById(c.getRoomId());
+                if (r == null) {
+                    req.setAttribute("error", "Phòng học không tồn tại.");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "create");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
+                }
+                if (r.getCapacity() < c.getCapacity()) {
+                    req.setAttribute("error", "Sức chứa phòng (" + r.getCapacity() + ") không đủ cho sĩ số tối đa của lớp (" + c.getCapacity() + ").");
+                    req.setAttribute("clazz", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    loadSelectData(req);
+                    req.setAttribute("mode", "create");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
+                    return;
+                }
+            }
             if (classDAO.findByCode(c.getClassCode()) != null) {
                 req.setAttribute("error", "Mã lớp đã tồn tại.");
                 req.setAttribute("clazz", c);
@@ -158,4 +179,3 @@ public class ClassCreateServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 }
-

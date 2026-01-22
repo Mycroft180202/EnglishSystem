@@ -25,6 +25,11 @@ public class AuthzFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
+        if (req.getCharacterEncoding() == null) {
+            req.setCharacterEncoding("UTF-8");
+        }
+        resp.setCharacterEncoding("UTF-8");
+
         String ctx = req.getContextPath();
         String path = req.getRequestURI().substring(ctx.length());
 
@@ -36,6 +41,11 @@ public class AuthzFilter implements Filter {
         User user = SecurityUtil.currentUser(req);
         if (user == null) {
             resp.sendRedirect(ctx + "/login");
+            return;
+        }
+
+        if (user.isMustChangePassword() && !path.equals("/app/change-password")) {
+            resp.sendRedirect(ctx + "/app/change-password");
             return;
         }
 
@@ -63,6 +73,7 @@ public class AuthzFilter implements Filter {
     }
 
     private static String[] requiredRolesForPath(String path) {
+        if (path.startsWith("/admin/students")) return new String[]{"ADMIN", "CONSULTANT"};
         if (path.startsWith("/admin/")) return new String[]{"ADMIN"};
         if (path.startsWith("/accounting/")) return new String[]{"ADMIN", "ACCOUNTANT"};
         if (path.startsWith("/consultant/")) return new String[]{"ADMIN", "CONSULTANT"};

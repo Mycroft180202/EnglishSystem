@@ -22,7 +22,7 @@ public class UserDAO extends DBContext {
 
     public User findByUsername(String username) throws Exception {
         String sql = """
-                SELECT u.user_id, u.username, u.password_hash, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
+                SELECT u.user_id, u.username, u.password_hash, u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
                 FROM dbo.users u
                 LEFT JOIN dbo.user_roles ur ON u.user_id = ur.user_id
                 LEFT JOIN dbo.roles r ON ur.role_id = r.role_id
@@ -40,7 +40,7 @@ public class UserDAO extends DBContext {
 
     public User findById(int userId) throws Exception {
         String sql = """
-                SELECT u.user_id, u.username, u.password_hash, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
+                SELECT u.user_id, u.username, u.password_hash, u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
                 FROM dbo.users u
                 LEFT JOIN dbo.user_roles ur ON u.user_id = ur.user_id
                 LEFT JOIN dbo.roles r ON ur.role_id = r.role_id
@@ -70,7 +70,11 @@ public class UserDAO extends DBContext {
     }
 
     public int createUserWithRole(String username, String passwordHash, String roleCode) throws Exception {
-        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, status) VALUES(?, ?, N'ACTIVE')";
+        return createUserWithRole(username, passwordHash, roleCode, false);
+    }
+
+    public int createUserWithRole(String username, String passwordHash, String roleCode, boolean mustChangePassword) throws Exception {
+        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, must_change_password, status) VALUES(?, ?, ?, N'ACTIVE')";
         String insertRoleSql = """
                 INSERT INTO dbo.user_roles(user_id, role_id)
                 SELECT ?, role_id FROM dbo.roles WHERE role_code = ?
@@ -84,6 +88,7 @@ public class UserDAO extends DBContext {
                 try (PreparedStatement ps = con.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setString(1, username);
                     ps.setString(2, passwordHash);
+                    ps.setBoolean(3, mustChangePassword);
                     ps.executeUpdate();
                     try (ResultSet rs = ps.getGeneratedKeys()) {
                         if (!rs.next()) throw new IllegalStateException("No generated key returned");
@@ -110,7 +115,7 @@ public class UserDAO extends DBContext {
     }
 
     public int createTeacherUser(int teacherId, String username, String passwordHash) throws Exception {
-        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, teacher_id, status) VALUES(?, ?, ?, N'ACTIVE')";
+        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, teacher_id, must_change_password, status) VALUES(?, ?, ?, 1, N'ACTIVE')";
         String insertRoleSql = """
                 INSERT INTO dbo.user_roles(user_id, role_id)
                 SELECT ?, role_id FROM dbo.roles WHERE role_code = N'TEACHER'
@@ -150,7 +155,7 @@ public class UserDAO extends DBContext {
     }
 
     public int createStudentUser(int studentId, String username, String passwordHash) throws Exception {
-        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, student_id, status) VALUES(?, ?, ?, N'ACTIVE')";
+        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, student_id, must_change_password, status) VALUES(?, ?, ?, 1, N'ACTIVE')";
         String insertRoleSql = """
                 INSERT INTO dbo.user_roles(user_id, role_id)
                 SELECT ?, role_id FROM dbo.roles WHERE role_code = N'STUDENT'
@@ -191,7 +196,7 @@ public class UserDAO extends DBContext {
 
     public User findStudentAccount(int studentId) throws Exception {
         String sql = """
-                SELECT u.user_id, u.username, u.password_hash, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
+                SELECT u.user_id, u.username, u.password_hash, u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
                 FROM dbo.users u
                 LEFT JOIN dbo.user_roles ur ON u.user_id = ur.user_id
                 LEFT JOIN dbo.roles r ON ur.role_id = r.role_id
@@ -208,7 +213,7 @@ public class UserDAO extends DBContext {
 
     public User findTeacherAccount(int teacherId) throws Exception {
         String sql = """
-                SELECT u.user_id, u.username, u.password_hash, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
+                SELECT u.user_id, u.username, u.password_hash, u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
                 FROM dbo.users u
                 LEFT JOIN dbo.user_roles ur ON u.user_id = ur.user_id
                 LEFT JOIN dbo.roles r ON ur.role_id = r.role_id
@@ -238,7 +243,7 @@ public class UserDAO extends DBContext {
     }
 
     public void updatePassword(int userId, String newPasswordHash) throws Exception {
-        String sql = "UPDATE dbo.users SET password_hash = ? WHERE user_id = ?";
+        String sql = "UPDATE dbo.users SET password_hash = ?, must_change_password = 0 WHERE user_id = ?";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, newPasswordHash);
@@ -263,6 +268,7 @@ public class UserDAO extends DBContext {
                 user.setUserId(rs.getInt("user_id"));
                 user.setUsername(rs.getString("username"));
                 user.setPasswordHash(rs.getString("password_hash"));
+                try { user.setMustChangePassword(rs.getBoolean("must_change_password")); } catch (Exception ignored) {}
                 user.setStatus(rs.getString("status"));
                 Timestamp createdAt = rs.getTimestamp("created_at");
                 if (createdAt != null) user.setCreatedAt(createdAt.toInstant());

@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
@@ -10,7 +10,10 @@
                 <c:out value="${clazz.className}"/> - <c:out value="${clazz.courseName}"/> (<c:out value="${clazz.classCode}"/>)
             </div>
         </div>
-        <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/admin/classes">Quay lại</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/admin/timetable?classId=${clazz.classId}">TKB tuần</a>
+            <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/admin/classes">Quay lại</a>
+        </div>
     </div>
 
     <c:if test="${not empty flashSuccess}">
@@ -105,7 +108,7 @@
                 <div class="col-md-4 d-flex align-items-end">
                     <button class="btn btn-success w-100" type="submit"
                             onclick="return confirm('Tạo buổi học từ lịch cho lớp này?');">
-                        Generate class_sessions
+                        Tạo buổi học tự động
                     </button>
                 </div>
             </form>

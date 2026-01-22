@@ -5,7 +5,9 @@ import java.time.LocalDate;
 
 public class ClassSession implements Serializable {
     private int sessionId;
+    private int sessionNo;
     private int classId;
+    private int courseId;
     private LocalDate sessionDate;
     private int slotId;
     private int roomId;
@@ -17,7 +19,16 @@ public class ClassSession implements Serializable {
     private String startTime;
     private String endTime;
     private String roomName;
+    private String roomCode;
     private String teacherName;
+    private String classCode;
+    private String className;
+    private String courseName;
+    private Integer assessId;
+    private String assessType;
+    private String assessName;
+    private String attendanceStatus;
+    private String attendanceMarkedAt;
 
     public int getSessionId() {
         return sessionId;
@@ -27,12 +38,28 @@ public class ClassSession implements Serializable {
         this.sessionId = sessionId;
     }
 
+    public int getSessionNo() {
+        return sessionNo;
+    }
+
+    public void setSessionNo(int sessionNo) {
+        this.sessionNo = sessionNo;
+    }
+
     public int getClassId() {
         return classId;
     }
 
     public void setClassId(int classId) {
         this.classId = classId;
+    }
+
+    public int getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(int courseId) {
+        this.courseId = courseId;
     }
 
     public LocalDate getSessionDate() {
@@ -107,6 +134,14 @@ public class ClassSession implements Serializable {
         this.roomName = roomName;
     }
 
+    public String getRoomCode() {
+        return roomCode;
+    }
+
+    public void setRoomCode(String roomCode) {
+        this.roomCode = roomCode;
+    }
+
     public String getTeacherName() {
         return teacherName;
     }
@@ -114,5 +149,68 @@ public class ClassSession implements Serializable {
     public void setTeacherName(String teacherName) {
         this.teacherName = teacherName;
     }
-}
 
+    public String getClassCode() {
+        return classCode;
+    }
+
+    public void setClassCode(String classCode) {
+        this.classCode = classCode;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public Integer getAssessId() {
+        return assessId;
+    }
+
+    public void setAssessId(Integer assessId) {
+        this.assessId = assessId;
+    }
+
+    public String getAssessType() {
+        return assessType;
+    }
+
+    public void setAssessType(String assessType) {
+        this.assessType = assessType;
+    }
+
+    public String getAssessName() {
+        return assessName;
+    }
+
+    public void setAssessName(String assessName) {
+        this.assessName = assessName;
+    }
+
+    public String getAttendanceStatus() {
+        return attendanceStatus;
+    }
+
+    public void setAttendanceStatus(String attendanceStatus) {
+        this.attendanceStatus = attendanceStatus;
+    }
+
+    public String getAttendanceMarkedAt() {
+        return attendanceMarkedAt;
+    }
+
+    public void setAttendanceMarkedAt(String attendanceMarkedAt) {
+        this.attendanceMarkedAt = attendanceMarkedAt;
+    }
+}

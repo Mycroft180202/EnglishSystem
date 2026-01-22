@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
@@ -40,21 +40,18 @@
         <div class="col-md-6">
             <label class="form-label">Type</label>
             <select class="form-select" name="type" required>
-                <option value="QUIZ" ${empty a.type || a.type == 'QUIZ' ? 'selected' : ''}>QUIZ</option>
-                <option value="MIDTERM" ${a.type == 'MIDTERM' ? 'selected' : ''}>MIDTERM</option>
-                <option value="FINAL" ${a.type == 'FINAL' ? 'selected' : ''}>FINAL</option>
-                <option value="OTHER" ${a.type == 'OTHER' ? 'selected' : ''}>OTHER</option>
+                <option value="TEST1" ${empty a.type || a.type == 'TEST1' || a.type == 'QUIZ' ? 'selected' : ''}>Test 1 (20%)</option>
+                <option value="TEST2" ${a.type == 'TEST2' || a.type == 'MIDTERM' ? 'selected' : ''}>Test 2 (30%)</option>
+                <option value="FINAL" ${a.type == 'FINAL' ? 'selected' : ''}>Final Test (40%)</option>
             </select>
+            <div class="form-text">
+                Chuyên cần 10% được tính tự động từ điểm danh (không tạo đầu điểm riêng).
+            </div>
         </div>
 
         <div class="col-md-8">
             <label class="form-label">Tên đầu điểm</label>
-            <input class="form-control" name="name" value="${a.name}" required maxlength="150">
-        </div>
-
-        <div class="col-md-2">
-            <label class="form-label">Weight</label>
-            <input class="form-control" name="weight" type="number" min="0" max="100" step="0.01" value="${empty a.weight ? 0 : a.weight}">
+            <input class="form-control" name="name" value="${a.name}" maxlength="150" placeholder="Ví dụ: Test 1 / Test 2 / Final Test">
         </div>
 
         <div class="col-md-2">
@@ -67,4 +64,3 @@
         </div>
     </form>
 </t:layout>
-

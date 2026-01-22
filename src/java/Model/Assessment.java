@@ -9,7 +9,7 @@ public class Assessment implements Serializable {
     private String name;
     private BigDecimal weight;
     private BigDecimal maxScore;
-    private String type; // QUIZ/MIDTERM/FINAL/OTHER
+    private String type; // TEST1/TEST2/FINAL (legacy: QUIZ/MIDTERM)
 
     public int getAssessId() {
         return assessId;
@@ -59,4 +59,3 @@ public class Assessment implements Serializable {
         this.type = type;
     }
 }
-

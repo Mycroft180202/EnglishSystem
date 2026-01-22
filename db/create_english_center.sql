@@ -72,6 +72,7 @@ CREATE TABLE dbo.users (
     phone         nvarchar(30)  NULL,
     teacher_id    int NULL,
     student_id    int NULL,
+    must_change_password bit NOT NULL CONSTRAINT DF_users_must_change_password DEFAULT 0,
     status        nvarchar(20)  NOT NULL CONSTRAINT DF_users_status DEFAULT N'ACTIVE',
     created_at    datetime2(0)  NOT NULL CONSTRAINT DF_users_created_at DEFAULT SYSUTCDATETIME(),
     CONSTRAINT CK_users_status CHECK (status IN (N'ACTIVE', N'LOCKED', N'DISABLED'))
@@ -304,10 +305,28 @@ CREATE TABLE dbo.attendance (
     CONSTRAINT FK_attendance_enrollments FOREIGN KEY (enroll_id) REFERENCES dbo.enrollments(enroll_id),
     CONSTRAINT FK_attendance_users FOREIGN KEY (marked_by) REFERENCES dbo.users(user_id),
     CONSTRAINT UQ_attendance UNIQUE (session_id, enroll_id),
-    CONSTRAINT CK_attendance_status CHECK (status IN (N'PRESENT', N'ABSENT', N'LATE', N'EXCUSED'))
+    CONSTRAINT CK_attendance_status CHECK (status IN (N'ATTENDED', N'ABSENT', N'EXCUSED'))
 );
 
 CREATE INDEX IX_attendance_enroll_id ON dbo.attendance(enroll_id);
+
+CREATE TABLE dbo.absence_requests (
+    request_id   int IDENTITY(1,1) NOT NULL CONSTRAINT PK_absence_requests PRIMARY KEY,
+    session_id   int NOT NULL,
+    enroll_id    int NOT NULL,
+    reason       nvarchar(500) NOT NULL,
+    status       nvarchar(20) NOT NULL CONSTRAINT DF_absence_requests_status DEFAULT N'PENDING',
+    created_at   datetime2(0) NOT NULL CONSTRAINT DF_absence_requests_created_at DEFAULT SYSUTCDATETIME(),
+    created_by   int NULL,
+    CONSTRAINT FK_absreq_session FOREIGN KEY (session_id) REFERENCES dbo.class_sessions(session_id),
+    CONSTRAINT FK_absreq_enroll FOREIGN KEY (enroll_id) REFERENCES dbo.enrollments(enroll_id),
+    CONSTRAINT FK_absreq_user FOREIGN KEY (created_by) REFERENCES dbo.users(user_id),
+    CONSTRAINT UQ_absreq UNIQUE (session_id, enroll_id),
+    CONSTRAINT CK_absreq_status CHECK (status IN (N'PENDING', N'APPROVED', N'REJECTED'))
+);
+
+CREATE INDEX IX_absreq_enroll_id ON dbo.absence_requests(enroll_id);
+CREATE INDEX IX_absreq_session_id ON dbo.absence_requests(session_id);
 
 CREATE TABLE dbo.assessments (
     assess_id  int IDENTITY(1,1) NOT NULL CONSTRAINT PK_assessments PRIMARY KEY,
@@ -319,8 +338,8 @@ CREATE TABLE dbo.assessments (
     CONSTRAINT FK_assessments_courses FOREIGN KEY (course_id) REFERENCES dbo.courses(course_id),
     CONSTRAINT CK_assessments_weight CHECK (weight >= 0 AND weight <= 100),
     CONSTRAINT CK_assessments_max CHECK (max_score > 0),
-    CONSTRAINT CK_assessments_type CHECK (type IN (N'QUIZ', N'MIDTERM', N'FINAL', N'OTHER')),
-    CONSTRAINT UQ_assessments UNIQUE (course_id, name, type)
+    CONSTRAINT CK_assessments_type CHECK (type IN (N'TEST1', N'TEST2', N'FINAL', N'QUIZ', N'MIDTERM')),
+    CONSTRAINT UQ_assessments UNIQUE (course_id, type)
 );
 
 CREATE INDEX IX_assessments_course_id ON dbo.assessments(course_id);
@@ -341,6 +360,26 @@ CREATE TABLE dbo.scores (
 );
 
 CREATE INDEX IX_scores_enroll_id ON dbo.scores(enroll_id);
+
+/* =========================
+   Session Assessments (test schedule)
+   ========================= */
+
+CREATE TABLE dbo.session_assessments (
+    session_id   int NOT NULL,
+    class_id     int NOT NULL,
+    assess_id    int NOT NULL,
+    assigned_at  datetime2(0) NOT NULL CONSTRAINT DF_session_assessments_assigned_at DEFAULT SYSUTCDATETIME(),
+    assigned_by  int NULL,
+    CONSTRAINT PK_session_assessments PRIMARY KEY (session_id),
+    CONSTRAINT FK_sa_session FOREIGN KEY (session_id) REFERENCES dbo.class_sessions(session_id),
+    CONSTRAINT FK_sa_class FOREIGN KEY (class_id) REFERENCES dbo.classes(class_id),
+    CONSTRAINT FK_sa_assessment FOREIGN KEY (assess_id) REFERENCES dbo.assessments(assess_id),
+    CONSTRAINT FK_sa_user FOREIGN KEY (assigned_by) REFERENCES dbo.users(user_id)
+);
+
+CREATE UNIQUE INDEX UX_sa_class_assess ON dbo.session_assessments(class_id, assess_id);
+CREATE INDEX IX_sa_assess_id ON dbo.session_assessments(assess_id);
 
 /* =========================
    Audit

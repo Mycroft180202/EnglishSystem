@@ -8,6 +8,7 @@
 }
 
 body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 .app-shell { background: var(--app-bg); color: var(--app-text); min-height: 100vh; }
 
@@ -22,6 +23,70 @@ body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-se
   border-radius: 999px;
   background: var(--app-primary);
   margin-right: 8px;
+}
+
+/* ===== Timetable (weekly) ===== */
+.timetable-wrap { border: 1px solid var(--app-border); border-radius: 12px; background: #fff; }
+.timetable { margin-bottom: 0; table-layout: fixed; min-width: 980px; }
+.timetable thead th { position: sticky; top: 0; z-index: 2; background: #f8fafc; }
+.timetable-col-slot { width: 160px; position: sticky; left: 0; z-index: 3; background: #f8fafc; }
+.timetable-col-day { width: 170px; }
+.timetable-cell { height: 92px; vertical-align: top; background: #fff; }
+.timetable-today { background: rgba(37,99,235,.06) !important; }
+.timetable-card {
+  border: 2px solid rgba(239,68,68,.75);
+  border-radius: 10px;
+  padding: 10px 10px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15,23,42,.05);
+}
+.js-session-card { cursor: pointer; }
+.js-session-card:focus { outline: 3px solid rgba(37, 99, 235, 0.25); outline-offset: 2px; }
+.timetable-card--upcoming { border-color: rgba(37,99,235,.75); }
+.timetable-card--done { border-color: rgba(34,197,94,.75); }
+.timetable-card--absent { border-color: rgba(239,68,68,.85); }
+.timetable-card--excused { border-color: rgba(245,158,11,.9); }
+.dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+.dot-upcoming { background: rgba(37,99,235,.9); }
+.dot-done { background: rgba(34,197,94,.9); }
+.dot-absent { background: rgba(239,68,68,.9); }
+.dot-excused { background: rgba(245,158,11,.95); }
+
+/* ===== Session detail modal ===== */
+.session-detail { font-family: inherit; }
+.session-detail .modal-body { font-size: 14px; }
+.session-detail .modal-header { border-bottom: 1px solid var(--app-border); }
+.session-detail .modal-title { color: var(--app-primary); }
+.session-detail .nav-pills .nav-link { border: 1px solid var(--app-border); background: #fff; color: var(--app-text); }
+.session-detail .nav-pills .nav-link.active { background: rgba(37,99,235,.08); border-color: rgba(37,99,235,.25); color: var(--app-primary); }
+.session-detail .nav-pills .nav-link[disabled] { opacity: .55; }
+.sd-status {
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--app-border);
+  background: rgba(37,99,235,.06);
+}
+#sd-statusText { text-transform: uppercase; letter-spacing: .04em; }
+.sd-status--upcoming { background: rgba(37,99,235,.06); }
+.sd-status--done { background: rgba(34,197,94,.08); }
+.sd-status--absent { background: rgba(239,68,68,.08); }
+.sd-status--excused { background: rgba(245,158,11,.12); }
+.sd-course { border-radius: 14px; }
+.sd-kv-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px dashed rgba(15, 23, 42, 0.08); }
+.sd-kv-row:first-child { border-top: 0; }
+.sd-kv-label { color: var(--app-muted); display: flex; align-items: center; gap: 8px; }
+.sd-kv-value { font-weight: 600; }
+.sd-people-box { border: 1px solid var(--app-border); border-radius: 14px; padding: 12px; }
+.sd-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--app-primary);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.18);
 }
 
 .app-sidebar {
@@ -78,4 +143,3 @@ body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-se
 
 .btn { border-radius: 12px; }
 .form-control, .form-select { border-radius: 12px; }
-
