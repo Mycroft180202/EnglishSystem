@@ -1,7 +1,6 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
-<%@page import="Controller.PaymentAddServlet"%>
 
 <t:layout title="Chi tiết hóa đơn" active="invoices">
     <c:set var="i" value="${invoice}"/>
@@ -52,7 +51,7 @@
             <h5 class="card-title">Ghi nhận thanh toán</h5>
             <form method="post" action="${pageContext.request.contextPath}/accounting/payments/add" class="row g-2">
                 <input type="hidden" name="invoiceId" value="${i.invoiceId}">
-                <input type="hidden" name="formToken" value="<%= PaymentAddServlet.issueToken(request) %>">
+                <input type="hidden" name="formToken" value="${paymentFormToken}">
                 <div class="col-md-3">
                     <input class="form-control" name="amount" placeholder="Số tiền" required>
                 </div>

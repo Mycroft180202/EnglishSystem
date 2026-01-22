@@ -265,11 +265,133 @@ CREATE TABLE dbo.payments (
     CONSTRAINT FK_payments_invoices FOREIGN KEY (invoice_id) REFERENCES dbo.invoices(invoice_id),
     CONSTRAINT FK_payments_users FOREIGN KEY (received_by) REFERENCES dbo.users(user_id),
     CONSTRAINT CK_payments_amount CHECK (amount > 0),
-    CONSTRAINT CK_payments_method CHECK (method IN (N'CASH', N'TRANSFER', N'CARD'))
+    CONSTRAINT CK_payments_method CHECK (method IN (N'CASH', N'TRANSFER', N'CARD', N'WALLET', N'PAYOS'))
 );
 
 CREATE INDEX IX_payments_invoice_id ON dbo.payments(invoice_id);
 CREATE INDEX IX_payments_paid_at ON dbo.payments(paid_at);
+
+/* =========================
+   Wallet / Payment Requests
+   ========================= */
+
+CREATE TABLE dbo.student_wallets (
+    student_id int NOT NULL CONSTRAINT PK_student_wallets PRIMARY KEY,
+    balance    decimal(18,2) NOT NULL CONSTRAINT DF_student_wallets_balance DEFAULT (0),
+    updated_at datetime2(0) NOT NULL CONSTRAINT DF_student_wallets_updated_at DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_student_wallets_students FOREIGN KEY (student_id) REFERENCES dbo.students(student_id),
+    CONSTRAINT CK_student_wallets_balance CHECK (balance >= 0)
+);
+
+CREATE TABLE dbo.wallet_transactions (
+    txn_id     bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_wallet_transactions PRIMARY KEY,
+    student_id int NOT NULL,
+    amount     decimal(18,2) NOT NULL,
+    txn_type   nvarchar(30) NOT NULL,
+    enroll_id  int NULL,
+    note       nvarchar(255) NULL,
+    created_at datetime2(0) NOT NULL CONSTRAINT DF_wallet_transactions_created_at DEFAULT SYSUTCDATETIME(),
+    created_by int NULL,
+    CONSTRAINT FK_wallet_tx_students FOREIGN KEY (student_id) REFERENCES dbo.students(student_id),
+    CONSTRAINT FK_wallet_tx_enroll FOREIGN KEY (enroll_id) REFERENCES dbo.enrollments(enroll_id),
+    CONSTRAINT FK_wallet_tx_user FOREIGN KEY (created_by) REFERENCES dbo.users(user_id),
+    CONSTRAINT CK_wallet_tx_amount CHECK (amount <> 0),
+    CONSTRAINT CK_wallet_tx_type CHECK (txn_type IN (N'TOPUP', N'ENROLLMENT_FEE', N'ADJUSTMENT'))
+);
+
+CREATE INDEX IX_wallet_tx_student_id ON dbo.wallet_transactions(student_id);
+CREATE INDEX IX_wallet_tx_created_at ON dbo.wallet_transactions(created_at);
+
+CREATE TABLE dbo.payment_requests (
+    request_id  int IDENTITY(1,1) NOT NULL CONSTRAINT PK_payment_requests PRIMARY KEY,
+    invoice_id  int NOT NULL,
+    enroll_id   int NOT NULL,
+    amount      decimal(18,2) NOT NULL,
+    method      nvarchar(20) NOT NULL CONSTRAINT DF_payment_requests_method DEFAULT N'CASH',
+    status      nvarchar(20) NOT NULL CONSTRAINT DF_payment_requests_status DEFAULT N'PENDING',
+    note        nvarchar(255) NULL,
+    created_at  datetime2(0) NOT NULL CONSTRAINT DF_payment_requests_created_at DEFAULT SYSUTCDATETIME(),
+    created_by  int NULL,
+    decided_at  datetime2(0) NULL,
+    decided_by  int NULL,
+    CONSTRAINT FK_payreq_invoice FOREIGN KEY (invoice_id) REFERENCES dbo.invoices(invoice_id),
+    CONSTRAINT FK_payreq_enroll FOREIGN KEY (enroll_id) REFERENCES dbo.enrollments(enroll_id),
+    CONSTRAINT FK_payreq_created_by FOREIGN KEY (created_by) REFERENCES dbo.users(user_id),
+    CONSTRAINT FK_payreq_decided_by FOREIGN KEY (decided_by) REFERENCES dbo.users(user_id),
+    CONSTRAINT CK_payreq_amount CHECK (amount > 0),
+    CONSTRAINT CK_payreq_method CHECK (method IN (N'CASH', N'TRANSFER')),
+    CONSTRAINT CK_payreq_status CHECK (status IN (N'PENDING', N'APPROVED', N'REJECTED'))
+);
+
+CREATE INDEX IX_payreq_status_created ON dbo.payment_requests(status, created_at);
+
+/* =========================
+   VietQR Payment Intents
+   ========================= */
+
+CREATE TABLE dbo.vietqr_payment_intents (
+    intent_id   bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_vietqr_payment_intents PRIMARY KEY,
+    invoice_id  int NOT NULL,
+    enroll_id   int NOT NULL,
+    amount      decimal(18,2) NOT NULL,
+    qr_ref      nvarchar(40) NOT NULL CONSTRAINT UQ_vietqr_qr_ref UNIQUE,
+    status      nvarchar(20) NOT NULL CONSTRAINT DF_vietqr_status DEFAULT N'PENDING',
+    created_at  datetime2(0) NOT NULL CONSTRAINT DF_vietqr_created_at DEFAULT SYSUTCDATETIME(),
+    paid_at     datetime2(0) NULL,
+    txn_ref     nvarchar(100) NULL,
+    raw_payload nvarchar(max) NULL,
+    CONSTRAINT FK_vietqr_invoice FOREIGN KEY (invoice_id) REFERENCES dbo.invoices(invoice_id),
+    CONSTRAINT FK_vietqr_enroll FOREIGN KEY (enroll_id) REFERENCES dbo.enrollments(enroll_id),
+    CONSTRAINT CK_vietqr_amount CHECK (amount > 0),
+    CONSTRAINT CK_vietqr_status CHECK (status IN (N'PENDING', N'PAID', N'EXPIRED', N'FAILED'))
+);
+
+CREATE INDEX IX_vietqr_invoice_id ON dbo.vietqr_payment_intents(invoice_id);
+CREATE INDEX IX_vietqr_status_created ON dbo.vietqr_payment_intents(status, created_at);
+
+/*
+   PayOS Payment Intents
+*/
+CREATE TABLE dbo.payos_payment_intents (
+    intent_id    bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_payos_payment_intents PRIMARY KEY,
+    invoice_id   int NOT NULL,
+    enroll_id    int NOT NULL,
+    amount       decimal(18,2) NOT NULL,
+    order_code   bigint NOT NULL CONSTRAINT UQ_payos_order_code UNIQUE,
+    status       nvarchar(20) NOT NULL CONSTRAINT DF_payos_status DEFAULT N'PENDING',
+    created_at   datetime2(0) NOT NULL CONSTRAINT DF_payos_created_at DEFAULT SYSUTCDATETIME(),
+    paid_at      datetime2(0) NULL,
+    txn_ref      nvarchar(100) NULL,
+    raw_payload  nvarchar(max) NULL,
+    CONSTRAINT FK_payos_invoice FOREIGN KEY (invoice_id) REFERENCES dbo.invoices(invoice_id),
+    CONSTRAINT FK_payos_enroll FOREIGN KEY (enroll_id) REFERENCES dbo.enrollments(enroll_id),
+    CONSTRAINT CK_payos_amount CHECK (amount > 0),
+    CONSTRAINT CK_payos_status CHECK (status IN (N'PENDING', N'PAID', N'EXPIRED', N'FAILED'))
+);
+
+CREATE INDEX IX_payos_invoice_id ON dbo.payos_payment_intents(invoice_id);
+CREATE INDEX IX_payos_status_created ON dbo.payos_payment_intents(status, created_at);
+
+/*
+   PayOS Wallet Top-ups
+*/
+CREATE TABLE dbo.payos_wallet_topups (
+    intent_id    bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_payos_wallet_topups PRIMARY KEY,
+    student_id   int NOT NULL,
+    amount       decimal(18,2) NOT NULL,
+    order_code   bigint NOT NULL CONSTRAINT UQ_payos_wallet_order_code UNIQUE,
+    status       nvarchar(20) NOT NULL CONSTRAINT DF_payos_wallet_status DEFAULT N'PENDING',
+    created_at   datetime2(0) NOT NULL CONSTRAINT DF_payos_wallet_created_at DEFAULT SYSUTCDATETIME(),
+    paid_at      datetime2(0) NULL,
+    txn_ref      nvarchar(100) NULL,
+    raw_payload  nvarchar(max) NULL,
+    CONSTRAINT FK_payos_wallet_students FOREIGN KEY (student_id) REFERENCES dbo.students(student_id),
+    CONSTRAINT CK_payos_wallet_amount CHECK (amount > 0),
+    CONSTRAINT CK_payos_wallet_status CHECK (status IN (N'PENDING', N'PAID', N'EXPIRED', N'FAILED'))
+);
+
+CREATE INDEX IX_payos_wallet_student_id ON dbo.payos_wallet_topups(student_id);
+CREATE INDEX IX_payos_wallet_status_created ON dbo.payos_wallet_topups(status, created_at);
 
 /* =========================
    Sessions / Attendance / Scores

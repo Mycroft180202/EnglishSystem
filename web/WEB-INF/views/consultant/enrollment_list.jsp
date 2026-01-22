@@ -47,6 +47,7 @@
                     <th>Lớp</th>
                     <th>Khóa</th>
                     <th>Trạng thái</th>
+                    <th>Hóa đơn</th>
                     <th class="text-end">Thao tác</th>
                 </tr>
             </thead>
@@ -64,28 +65,45 @@
                         </td>
                         <td><c:out value="${e.courseName}"/></td>
                         <td><span class="badge text-bg-secondary"><c:out value="${e.status}"/></span></td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${empty e.invoiceId}">
+                                    <span class="text-muted">--</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge text-bg-light border"><c:out value="${e.invoiceStatus}"/></span>
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
                         <td class="text-end">
+                            <c:if test="${sessionScope.authUser.roleCodes.contains('ADMIN')}">
+                                <form class="d-inline" method="post" action="${pageContext.request.contextPath}/admin/enrollments/delete">
+                                    <input type="hidden" name="id" value="${e.enrollId}">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit"
+                                            onclick="return confirm('Xóa đăng ký này?');">Xóa</button>
+                                </form>
+                            </c:if>
+                            <c:if test="${e.status == 'PENDING' && not empty e.invoiceId && (e.invoiceStatus == 'UNPAID' || e.invoiceStatus == 'PARTIAL')}">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="${pageContext.request.contextPath}/consultant/payment-requests/create?invoiceId=${e.invoiceId}">
+                                    Gửi yêu cầu thu tiền
+                                </a>
+                            </c:if>
                             <form class="d-inline" method="post"
                                   action="${pageContext.request.contextPath}${pageContext.request.requestURI.contains('/admin/') ? '/admin' : '/consultant'}/enrollments/status">
                                 <input type="hidden" name="id" value="${e.enrollId}">
-                                <c:choose>
-                                    <c:when test="${e.status == 'ACTIVE'}">
-                                        <input type="hidden" name="status" value="CANCELLED">
-                                        <button class="btn btn-sm btn-outline-danger" type="submit"
-                                                onclick="return confirm('Hủy đăng ký này?');">Hủy</button>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <input type="hidden" name="status" value="ACTIVE">
-                                        <button class="btn btn-sm btn-outline-success" type="submit">Kích hoạt</button>
-                                    </c:otherwise>
-                                </c:choose>
+                                <c:if test="${e.status == 'ACTIVE' || e.status == 'PENDING'}">
+                                    <input type="hidden" name="status" value="CANCELLED">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit"
+                                            onclick="return confirm('Hủy đăng ký này?');">Hủy</button>
+                                </c:if>
                             </form>
                         </td>
                     </tr>
                 </c:forEach>
                 <c:if test="${empty enrollments}">
                     <tr>
-                        <td colspan="6" class="text-center text-muted">Chưa có đăng ký.</td>
+                        <td colspan="7" class="text-center text-muted">Chưa có đăng ký.</td>
                     </tr>
                 </c:if>
             </tbody>

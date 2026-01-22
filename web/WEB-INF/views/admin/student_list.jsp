@@ -78,6 +78,13 @@
                                href="${pageContext.request.contextPath}${pageContext.request.requestURI.contains('/admin/') ? '/admin' : '/consultant'}/students/edit?id=${s.studentId}">Sửa</a>
                             <a class="btn btn-sm btn-outline-secondary"
                                href="${pageContext.request.contextPath}${pageContext.request.requestURI.contains('/admin/') ? '/admin' : '/consultant'}/students/account?studentId=${s.studentId}">Account</a>
+                            <c:if test="${sessionScope.authUser.roleCodes.contains('ADMIN')}">
+                                <form class="d-inline" method="post" action="${pageContext.request.contextPath}/admin/students/delete">
+                                    <input type="hidden" name="id" value="${s.studentId}">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit"
+                                            onclick="return confirm('Xóa học viên này?');">Xóa</button>
+                                </form>
+                            </c:if>
                             <form class="d-inline" method="post"
                                   action="${pageContext.request.contextPath}${pageContext.request.requestURI.contains('/admin/') ? '/admin' : '/consultant'}/students/status">
                                 <input type="hidden" name="id" value="${s.studentId}">

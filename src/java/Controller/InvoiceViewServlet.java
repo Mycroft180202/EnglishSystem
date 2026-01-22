@@ -35,6 +35,7 @@ public class InvoiceViewServlet extends HttpServlet {
             List<Payment> payments = paymentDAO.listByInvoice(id);
             req.setAttribute("invoice", invoice);
             req.setAttribute("payments", payments);
+            req.setAttribute("paymentFormToken", PaymentAddServlet.issueToken(req));
             req.getRequestDispatcher("/WEB-INF/views/accounting/invoice_view.jsp").forward(req, resp);
         } catch (Exception ex) {
             throw new ServletException(ex);
@@ -49,4 +50,3 @@ public class InvoiceViewServlet extends HttpServlet {
         }
     }
 }
-

@@ -18,6 +18,9 @@
 
     <form class="row g-2 mb-3" method="get" action="${pageContext.request.contextPath}/admin/courses">
         <div class="col-auto">
+            <input class="form-control" name="q" placeholder="Tìm kiếm" value="${q}">
+        </div>
+        <div class="col-auto">
             <select class="form-select" name="status">
                 <option value="" ${empty status ? 'selected' : ''}>Tất cả trạng thái</option>
                 <option value="ACTIVE" ${status == 'ACTIVE' ? 'selected' : ''}>Hoạt động</option>
@@ -64,6 +67,11 @@
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary"
                                href="${pageContext.request.contextPath}/admin/courses/edit?id=${c.courseId}">Sửa</a>
+                            <form class="d-inline" method="post" action="${pageContext.request.contextPath}/admin/courses/delete">
+                                <input type="hidden" name="id" value="${c.courseId}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit"
+                                        onclick="return confirm('Xóa khóa học này?');">Xóa</button>
+                            </form>
                             <form class="d-inline" method="post" action="${pageContext.request.contextPath}/admin/courses/status">
                                 <input type="hidden" name="id" value="${c.courseId}">
                                 <c:choose>

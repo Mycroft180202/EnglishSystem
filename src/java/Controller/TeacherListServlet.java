@@ -24,10 +24,13 @@ public class TeacherListServlet extends HttpServlet {
             Flash.consume(req);
             String status = trim(req.getParameter("status"));
             if (status.isEmpty()) status = null;
+            String q = trim(req.getParameter("q"));
+            if (q.isEmpty()) q = null;
 
-            List<Teacher> teachers = teacherDAO.listAll(status);
+            List<Teacher> teachers = teacherDAO.listAll(status, q);
             req.setAttribute("teachers", teachers);
             req.setAttribute("status", status);
+            req.setAttribute("q", q);
             req.getRequestDispatcher("/WEB-INF/views/admin/teacher_list.jsp").forward(req, resp);
         } catch (Exception ex) {
             throw new ServletException(ex);
@@ -38,4 +41,3 @@ public class TeacherListServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 }
-

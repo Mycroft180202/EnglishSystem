@@ -25,10 +25,13 @@ public class CourseListServlet extends HttpServlet {
 
             String status = trim(req.getParameter("status"));
             if (status.isEmpty()) status = null;
+            String q = trim(req.getParameter("q"));
+            if (q.isEmpty()) q = null;
 
-            List<Course> courses = courseDAO.listAll(status);
+            List<Course> courses = courseDAO.listAll(status, q);
             req.setAttribute("courses", courses);
             req.setAttribute("status", status);
+            req.setAttribute("q", q);
             req.getRequestDispatcher("/WEB-INF/views/admin/course_list.jsp").forward(req, resp);
         } catch (Exception ex) {
             throw new ServletException(ex);

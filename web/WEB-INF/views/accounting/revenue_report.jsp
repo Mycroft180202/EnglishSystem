@@ -14,6 +14,9 @@
         <div class="col-auto">
             <button class="btn btn-outline-secondary" type="submit">Xem</button>
         </div>
+        <div class="col-auto">
+            <a class="btn btn-outline-success" href="${pageContext.request.contextPath}/accounting/reports/revenue?month=${month}&export=1">Xuất Excel (CSV)</a>
+        </div>
     </form>
 
     <div class="table-responsive">

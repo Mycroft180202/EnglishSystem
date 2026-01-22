@@ -16,6 +16,8 @@ public class Enrollment implements Serializable {
     private String classCode;
     private String className;
     private String courseName;
+    private Integer invoiceId;
+    private String invoiceStatus;
 
     public int getEnrollId() {
         return enrollId;
@@ -96,5 +98,20 @@ public class Enrollment implements Serializable {
     public void setCourseName(String courseName) {
         this.courseName = courseName;
     }
-}
 
+    public Integer getInvoiceId() {
+        return invoiceId;
+    }
+
+    public void setInvoiceId(Integer invoiceId) {
+        this.invoiceId = invoiceId;
+    }
+
+    public String getInvoiceStatus() {
+        return invoiceStatus;
+    }
+
+    public void setInvoiceStatus(String invoiceStatus) {
+        this.invoiceStatus = invoiceStatus;
+    }
+}

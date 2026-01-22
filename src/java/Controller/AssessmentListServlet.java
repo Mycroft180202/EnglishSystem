@@ -26,7 +26,7 @@ public class AssessmentListServlet extends HttpServlet {
             Flash.consume(req);
 
             int courseId = parseInt(req.getParameter("courseId"), -1);
-            List<Course> courses = courseDAO.listAll("ACTIVE");
+            List<Course> courses = courseDAO.listAll("ACTIVE", null);
             req.setAttribute("courses", courses);
 
             if (courseId <= 0 && !courses.isEmpty()) courseId = courses.get(0).getCourseId();
@@ -48,4 +48,3 @@ public class AssessmentListServlet extends HttpServlet {
         }
     }
 }
-

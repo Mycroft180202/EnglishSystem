@@ -2,19 +2,23 @@ package Controller;
 
 import DAO.ClassDAO;
 import DAO.EnrollmentDAO;
+import DAO.InvoiceDAO;
 import DAO.RoomDAO;
 import DAO.StudentDAO;
 import Model.CenterClass;
 import Model.Room;
 import Model.Student;
+import Model.User;
 import Util.Flash;
 import Util.FormToken;
+import Util.SecurityUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @WebServlet({"/admin/enrollments/create", "/consultant/enrollments/create"})
@@ -23,6 +27,7 @@ public class EnrollmentCreateServlet extends HttpServlet {
     private final StudentDAO studentDAO = new StudentDAO();
     private final ClassDAO classDAO = new ClassDAO();
     private final RoomDAO roomDAO = new RoomDAO();
+    private final InvoiceDAO invoiceDAO = new InvoiceDAO();
     private static final String TOKEN_KEY = "enrollCreateToken";
 
     @Override
@@ -152,7 +157,11 @@ public class EnrollmentCreateServlet extends HttpServlet {
             }
 
             try {
-                enrollmentDAO.create(studentId, classId, "ACTIVE");
+                int enrollId = enrollmentDAO.create(studentId, classId, "PENDING");
+                BigDecimal fee = c.getStandardFee() == null ? BigDecimal.ZERO : c.getStandardFee();
+                User actor = SecurityUtil.currentUser(req);
+                Integer issuedBy = actor == null ? null : actor.getUserId();
+                invoiceDAO.createInvoice(enrollId, fee, BigDecimal.ZERO, issuedBy);
             } catch (Exception ex) {
                 req.setAttribute("error", "Không thể đăng ký (có thể đã đăng ký lớp này).");
                 req.setAttribute("studentId", studentId);
@@ -163,7 +172,7 @@ public class EnrollmentCreateServlet extends HttpServlet {
                 return;
             }
 
-            Flash.success(req, "Đăng ký học thành công.");
+            Flash.success(req, "Đã tạo đăng ký ở trạng thái chờ thanh toán.");
             resp.sendRedirect(req.getContextPath() + basePath(req) + "/enrollments");
         } catch (Exception ex) {
             throw new ServletException(ex);
@@ -172,7 +181,7 @@ public class EnrollmentCreateServlet extends HttpServlet {
 
     private void loadData(HttpServletRequest req) throws Exception {
         List<Student> students = studentDAO.listActive();
-        List<CenterClass> classes = classDAO.listAll(null);
+        List<CenterClass> classes = classDAO.listAll(null, null);
         req.setAttribute("students", students);
         req.setAttribute("classes", classes);
     }

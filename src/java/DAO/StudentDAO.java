@@ -120,4 +120,88 @@ public class StudentDAO extends DBContext {
         ps.setString(8, s.getStatus());
         if (includeIdAtEnd) ps.setInt(9, s.getStudentId());
     }
+
+    public DeleteResult deleteCascade(int studentId) throws Exception {
+        try (Connection con = getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // Attendance / absence / scores for enrollments of this student
+                exec(con, """
+                        DELETE a
+                        FROM dbo.attendance a
+                        JOIN dbo.enrollments e ON a.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+                exec(con, """
+                        DELETE ar
+                        FROM dbo.absence_requests ar
+                        JOIN dbo.enrollments e ON ar.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+                exec(con, """
+                        DELETE sc
+                        FROM dbo.scores sc
+                        JOIN dbo.enrollments e ON sc.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+
+                exec(con, """
+                        DELETE p
+                        FROM dbo.payments p
+                        JOIN dbo.invoices i ON p.invoice_id = i.invoice_id
+                        JOIN dbo.enrollments e ON i.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+                exec(con, """
+                        DELETE pr
+                        FROM dbo.payment_requests pr
+                        JOIN dbo.enrollments e ON pr.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+                exec(con, """
+                        DELETE v
+                        FROM dbo.vietqr_payment_intents v
+                        JOIN dbo.enrollments e ON v.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+                exec(con, """
+                        DELETE po
+                        FROM dbo.payos_payment_intents po
+                        JOIN dbo.enrollments e ON po.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+                exec(con, """
+                        DELETE i
+                        FROM dbo.invoices i
+                        JOIN dbo.enrollments e ON i.enroll_id = e.enroll_id
+                        WHERE e.student_id = ?
+                        """, studentId);
+
+                exec(con, "DELETE FROM dbo.wallet_transactions WHERE student_id = ?", studentId);
+                exec(con, "DELETE FROM dbo.enrollments WHERE student_id = ?", studentId);
+
+                exec(con, "DELETE FROM dbo.payos_wallet_topups WHERE student_id = ?", studentId);
+                exec(con, "DELETE FROM dbo.student_wallets WHERE student_id = ?", studentId);
+
+                exec(con, "UPDATE dbo.users SET student_id = NULL WHERE student_id = ?", studentId);
+
+                int deleted = exec(con, "DELETE FROM dbo.students WHERE student_id = ?", studentId);
+                con.commit();
+                if (deleted <= 0) return DeleteResult.fail("Không tìm thấy học viên để xóa.");
+                return DeleteResult.ok("Đã xóa học viên (kèm dữ liệu đăng ký/học phí/ví liên quan).");
+            } catch (Exception ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
+    private static int exec(Connection con, String sql, int id) throws Exception {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate();
+        }
+    }
 }

@@ -65,6 +65,7 @@ public class AuthzFilter implements Filter {
     private static boolean isPublicPath(String path) {
         if (path == null || path.isEmpty() || "/".equals(path)) return true;
         if (path.startsWith("/assets/")) return true;
+        if (path.startsWith("/api/")) return true;
         return path.equals("/index.jsp")
                 || path.equals("/login")
                 || path.equals("/logout")

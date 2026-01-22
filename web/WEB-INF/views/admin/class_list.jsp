@@ -17,6 +17,9 @@
 
     <form class="row g-2 mb-3" method="get" action="${pageContext.request.contextPath}/admin/classes">
         <div class="col-auto">
+            <input class="form-control" name="q" placeholder="Tìm kiếm" value="${q}">
+        </div>
+        <div class="col-auto">
             <select class="form-select" name="status">
                 <option value="" ${empty status ? 'selected' : ''}>Tất cả trạng thái</option>
                 <option value="DRAFT" ${status == 'DRAFT' ? 'selected' : ''}>DRAFT</option>
@@ -67,6 +70,11 @@
                                href="${pageContext.request.contextPath}/admin/class-schedules?classId=${cl.classId}">Lịch</a>
                             <a class="btn btn-sm btn-outline-secondary"
                                href="${pageContext.request.contextPath}/admin/timetable?classId=${cl.classId}">TKB</a>
+                            <form class="d-inline" method="post" action="${pageContext.request.contextPath}/admin/classes/delete">
+                                <input type="hidden" name="id" value="${cl.classId}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit"
+                                        onclick="return confirm('Xóa lớp và toàn bộ dữ liệu liên quan?');">Xóa</button>
+                            </form>
                             <div class="btn-group btn-group-sm" role="group">
                                 <form method="post" action="${pageContext.request.contextPath}/admin/classes/status">
                                     <input type="hidden" name="id" value="${cl.classId}">

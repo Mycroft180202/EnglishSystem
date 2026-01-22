@@ -164,4 +164,33 @@ public class InvoiceDAO extends DBContext {
         i.setCourseName(rs.getString("course_name"));
         return i;
     }
+
+    public DeleteResult deleteCascade(int invoiceId) throws Exception {
+        try (Connection con = getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                exec(con, "DELETE FROM dbo.payments WHERE invoice_id = ?", invoiceId);
+                exec(con, "DELETE FROM dbo.payment_requests WHERE invoice_id = ?", invoiceId);
+                exec(con, "DELETE FROM dbo.vietqr_payment_intents WHERE invoice_id = ?", invoiceId);
+                exec(con, "DELETE FROM dbo.payos_payment_intents WHERE invoice_id = ?", invoiceId);
+
+                int deleted = exec(con, "DELETE FROM dbo.invoices WHERE invoice_id = ?", invoiceId);
+                con.commit();
+                if (deleted <= 0) return DeleteResult.fail("Không tìm thấy hóa đơn để xóa.");
+                return DeleteResult.ok("Đã xóa hóa đơn (kèm dữ liệu thanh toán liên quan).");
+            } catch (Exception ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
+    private static int exec(Connection con, String sql, int id) throws Exception {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate();
+        }
+    }
 }

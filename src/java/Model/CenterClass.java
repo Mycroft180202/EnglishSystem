@@ -1,6 +1,7 @@
 package Model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class CenterClass implements Serializable {
@@ -19,6 +20,8 @@ public class CenterClass implements Serializable {
     private String courseName;
     private String teacherName;
     private String roomName;
+    private BigDecimal standardFee;
+    private Integer activeEnrollCount;
 
     public int getClassId() {
         return classId;
@@ -123,5 +126,20 @@ public class CenterClass implements Serializable {
     public void setRoomName(String roomName) {
         this.roomName = roomName;
     }
-}
 
+    public BigDecimal getStandardFee() {
+        return standardFee;
+    }
+
+    public void setStandardFee(BigDecimal standardFee) {
+        this.standardFee = standardFee;
+    }
+
+    public Integer getActiveEnrollCount() {
+        return activeEnrollCount;
+    }
+
+    public void setActiveEnrollCount(Integer activeEnrollCount) {
+        this.activeEnrollCount = activeEnrollCount;
+    }
+}

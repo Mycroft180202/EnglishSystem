@@ -134,6 +134,7 @@ public class Invoice implements Serializable {
     public BigDecimal getRemainingAmount() {
         BigDecimal due = getDueAmount();
         BigDecimal paid = paidAmount == null ? BigDecimal.ZERO : paidAmount;
-        return due.subtract(paid);
+        BigDecimal remaining = due.subtract(paid);
+        return remaining.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : remaining;
     }
 }

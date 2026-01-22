@@ -108,6 +108,15 @@ public class TeacherAttendanceServlet extends HttpServlet {
                 return;
             }
 
+            String action = trim(req.getParameter("action"));
+            if ("teacherCheckIn".equalsIgnoreCase(action)) {
+                String err = sessionDAO.markTeacherCheckIn(sessionId, user.getUserId());
+                if (err == null) Flash.success(req, "Đã check-in giáo viên.");
+                else Flash.error(req, err);
+                resp.sendRedirect(req.getContextPath() + "/teacher/attendance?sessionId=" + sessionId);
+                return;
+            }
+
             List<AttendanceRow> existingRows = attendanceDAO.listForSession(sessionId);
             Map<Integer, AttendanceRow> updates = new LinkedHashMap<>();
             boolean anyCoerced = false;

@@ -23,6 +23,17 @@
         <div class="alert alert-danger"><c:out value="${flashError}"/></div>
     </c:if>
 
+    <div class="mb-3">
+        <form method="post" action="${pageContext.request.contextPath}/teacher/attendance" class="d-inline">
+            <input type="hidden" name="formToken" value="${formToken}">
+            <input type="hidden" name="sessionId" value="${sessionId}">
+            <input type="hidden" name="action" value="teacherCheckIn">
+            <button class="btn btn-outline-success" type="submit"
+                    onclick="return confirm('Xác nhận bạn có mặt để dạy buổi này?');">Tôi có mặt</button>
+        </form>
+        <span class="text-muted small ms-2">Admin sẽ thấy check-in này để xác nhận giáo viên đã đi dạy.</span>
+    </div>
+
     <form method="post" action="${pageContext.request.contextPath}/teacher/attendance"
           onsubmit="this.querySelector('button[type=submit]').disabled=true;">
         <input type="hidden" name="formToken" value="${formToken}">

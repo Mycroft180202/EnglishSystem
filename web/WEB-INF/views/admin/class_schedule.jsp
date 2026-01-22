@@ -230,6 +230,15 @@
                                 Rebuild buổi học từ hôm nay (xóa các buổi SCHEDULED và tạo lại theo lịch mới)
                             </label>
                         </div>
+                        <div class="row g-2 mt-2 align-items-end" id="effectiveFromWrap" style="display:none;">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label mb-1">Áp dụng từ ngày</label>
+                                <input class="form-control" type="date" name="effectiveFrom" id="effectiveFrom">
+                                <div class="text-muted small mt-1">
+                                    Chỉ ảnh hưởng các buổi SCHEDULED từ ngày này trở đi.
+                                </div>
+                            </div>
+                        </div>
                         <div class="text-muted small mt-1">
                             Lưu ý: chỉ ảnh hưởng các buổi có trạng thái SCHEDULED và từ hôm nay trở đi.
                         </div>
@@ -256,7 +265,19 @@
             document.getElementById('editSlotId').value = button.getAttribute('data-slot-id') || '';
             document.getElementById('editRoomId').value = button.getAttribute('data-room-id') || '';
             var cb = document.getElementById('updateSessions');
+            var wrap = document.getElementById('effectiveFromWrap');
+            var input = document.getElementById('effectiveFrom');
             if (cb) cb.checked = false;
+            if (wrap) wrap.style.display = 'none';
+            if (input) input.value = new Date().toISOString().slice(0, 10);
         });
+
+        var cb = document.getElementById('updateSessions');
+        var wrap = document.getElementById('effectiveFromWrap');
+        if (cb && wrap) {
+            cb.addEventListener('change', function () {
+                wrap.style.display = cb.checked ? '' : 'none';
+            });
+        }
     });
 </script>

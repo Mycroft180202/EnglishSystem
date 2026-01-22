@@ -2,8 +2,12 @@ package Controller;
 
 import DAO.ClassDAO;
 import DAO.ClassSessionDAO;
+import DAO.RoomDAO;
+import DAO.TimeSlotDAO;
 import Model.CenterClass;
 import Model.ClassSession;
+import Model.Room;
+import Model.TimeSlot;
 import Util.Flash;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,6 +21,8 @@ import java.util.List;
 public class ClassSessionListServlet extends HttpServlet {
     private final ClassDAO classDAO = new ClassDAO();
     private final ClassSessionDAO sessionDAO = new ClassSessionDAO();
+    private final TimeSlotDAO timeSlotDAO = new TimeSlotDAO();
+    private final RoomDAO roomDAO = new RoomDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -36,6 +42,10 @@ public class ClassSessionListServlet extends HttpServlet {
             List<ClassSession> sessions = sessionDAO.listByClass(classId);
             req.setAttribute("clazz", clazz);
             req.setAttribute("sessions", sessions);
+            List<TimeSlot> slots = timeSlotDAO.listAll();
+            List<Room> rooms = roomDAO.listActive();
+            req.setAttribute("slots", slots);
+            req.setAttribute("rooms", rooms);
             req.getRequestDispatcher("/WEB-INF/views/admin/class_session_list.jsp").forward(req, resp);
         } catch (Exception ex) {
             throw new ServletException(ex);
@@ -50,4 +60,3 @@ public class ClassSessionListServlet extends HttpServlet {
         }
     }
 }
-

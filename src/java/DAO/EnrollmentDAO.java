@@ -10,15 +10,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EnrollmentDAO extends DBContext {
+    public static final class EnrollPayInfo {
+        private int enrollId;
+        private int studentId;
+        private int classId;
+        private java.math.BigDecimal standardFee;
+        private String enrollStatus;
+        private Integer invoiceId;
+        private String invoiceStatus;
+
+        public int getEnrollId() { return enrollId; }
+        public int getStudentId() { return studentId; }
+        public int getClassId() { return classId; }
+        public java.math.BigDecimal getStandardFee() { return standardFee; }
+        public String getEnrollStatus() { return enrollStatus; }
+        public Integer getInvoiceId() { return invoiceId; }
+        public String getInvoiceStatus() { return invoiceStatus; }
+    }
+
     public List<Enrollment> listAll(Integer classId, Integer studentId, String status) throws Exception {
         String sql = """
                 SELECT e.enroll_id, e.student_id, e.class_id, e.enrolled_at, e.status,
+                       i.invoice_id, i.status AS invoice_status,
                        s.full_name AS student_name, s.phone AS student_phone,
                        c.class_code, c.class_name, cr.course_name
                 FROM dbo.enrollments e
                 JOIN dbo.students s ON e.student_id = s.student_id
                 JOIN dbo.classes c ON e.class_id = c.class_id
                 JOIN dbo.courses cr ON c.course_id = cr.course_id
+                LEFT JOIN dbo.invoices i ON i.enroll_id = e.enroll_id
                 WHERE (? IS NULL OR e.class_id = ?)
                   AND (? IS NULL OR e.student_id = ?)
                   AND (? IS NULL OR e.status = ?)
@@ -41,7 +61,8 @@ public class EnrollmentDAO extends DBContext {
     }
 
     public int countActiveByClass(int classId) throws Exception {
-        String sql = "SELECT COUNT(*) AS cnt FROM dbo.enrollments WHERE class_id = ? AND status = N'ACTIVE'";
+        // Count seats that should block new registrations (ACTIVE + PENDING).
+        String sql = "SELECT COUNT(*) AS cnt FROM dbo.enrollments WHERE class_id = ? AND status IN (N'ACTIVE', N'PENDING')";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, classId);
@@ -66,7 +87,7 @@ public class EnrollmentDAO extends DBContext {
 
     public boolean hasScheduleConflict(int studentId, int newClassId) throws Exception {
         /*
-          Conflict when any ACTIVE enrollment for student has a class schedule overlapping day_of_week + slot_id
+          Conflict when any ACTIVE/PENDING enrollment for student has a class schedule overlapping day_of_week + slot_id
           with the new class schedule.
         */
         String sql = """
@@ -77,7 +98,7 @@ public class EnrollmentDAO extends DBContext {
                    AND cs2.day_of_week = cs1.day_of_week
                    AND cs2.slot_id = cs1.slot_id
                 WHERE e.student_id = ?
-                  AND e.status = N'ACTIVE'
+                  AND e.status IN (N'ACTIVE', N'PENDING')
                 """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -160,6 +181,36 @@ public class EnrollmentDAO extends DBContext {
         }
     }
 
+    public EnrollPayInfo findPayInfo(int enrollId) throws Exception {
+        String sql = """
+                SELECT e.enroll_id, e.student_id, e.class_id, e.status AS enroll_status,
+                       cr.standard_fee,
+                       i.invoice_id, i.status AS invoice_status
+                FROM dbo.enrollments e
+                JOIN dbo.classes c ON e.class_id = c.class_id
+                JOIN dbo.courses cr ON c.course_id = cr.course_id
+                LEFT JOIN dbo.invoices i ON i.enroll_id = e.enroll_id
+                WHERE e.enroll_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, enrollId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                EnrollPayInfo info = new EnrollPayInfo();
+                info.enrollId = rs.getInt("enroll_id");
+                info.studentId = rs.getInt("student_id");
+                info.classId = rs.getInt("class_id");
+                info.enrollStatus = rs.getString("enroll_status");
+                info.standardFee = rs.getBigDecimal("standard_fee");
+                int invoiceId = rs.getInt("invoice_id");
+                info.invoiceId = rs.wasNull() ? null : invoiceId;
+                info.invoiceStatus = rs.getString("invoice_status");
+                return info;
+            }
+        }
+    }
+
     private static Enrollment map(ResultSet rs) throws Exception {
         Enrollment e = new Enrollment();
         e.setEnrollId(rs.getInt("enroll_id"));
@@ -168,11 +219,56 @@ public class EnrollmentDAO extends DBContext {
         Timestamp t = rs.getTimestamp("enrolled_at");
         if (t != null) e.setEnrolledAt(t.toInstant());
         e.setStatus(rs.getString("status"));
+        try {
+            int inv = rs.getInt("invoice_id");
+            e.setInvoiceId(rs.wasNull() ? null : inv);
+        } catch (Exception ignored) {}
+        try { e.setInvoiceStatus(rs.getString("invoice_status")); } catch (Exception ignored) {}
         e.setStudentName(rs.getString("student_name"));
         e.setStudentPhone(rs.getString("student_phone"));
         e.setClassCode(rs.getString("class_code"));
         e.setClassName(rs.getString("class_name"));
         e.setCourseName(rs.getString("course_name"));
         return e;
+    }
+
+    public DeleteResult deleteCascade(int enrollId) throws Exception {
+        try (Connection con = getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                exec(con, "DELETE FROM dbo.attendance WHERE enroll_id = ?", enrollId);
+                exec(con, "DELETE FROM dbo.absence_requests WHERE enroll_id = ?", enrollId);
+                exec(con, "DELETE FROM dbo.scores WHERE enroll_id = ?", enrollId);
+
+                exec(con, """
+                        DELETE p
+                        FROM dbo.payments p
+                        JOIN dbo.invoices i ON p.invoice_id = i.invoice_id
+                        WHERE i.enroll_id = ?
+                        """, enrollId);
+                exec(con, "DELETE FROM dbo.payment_requests WHERE enroll_id = ?", enrollId);
+                exec(con, "DELETE FROM dbo.vietqr_payment_intents WHERE enroll_id = ?", enrollId);
+                exec(con, "DELETE FROM dbo.payos_payment_intents WHERE enroll_id = ?", enrollId);
+                exec(con, "DELETE FROM dbo.invoices WHERE enroll_id = ?", enrollId);
+                exec(con, "DELETE FROM dbo.wallet_transactions WHERE enroll_id = ?", enrollId);
+
+                int deleted = exec(con, "DELETE FROM dbo.enrollments WHERE enroll_id = ?", enrollId);
+                con.commit();
+                if (deleted <= 0) return DeleteResult.fail("Không tìm thấy đăng ký để xóa.");
+                return DeleteResult.ok("Đã xóa đăng ký (kèm hóa đơn/thu tiền/điểm danh/điểm).");
+            } catch (Exception ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
+    private static int exec(Connection con, String sql, int id) throws Exception {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate();
+        }
     }
 }

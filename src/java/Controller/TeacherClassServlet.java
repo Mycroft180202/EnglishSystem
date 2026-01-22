@@ -30,7 +30,7 @@ public class TeacherClassServlet extends HttpServlet {
                 return;
             }
 
-            List<CenterClass> all = classDAO.listAll(null);
+            List<CenterClass> all = classDAO.listAll(null, null);
             List<CenterClass> mine = all.stream()
                     .filter(c -> c.getTeacherId() != null && c.getTeacherId().equals(user.getTeacherId()))
                     .collect(Collectors.toList());
@@ -42,4 +42,3 @@ public class TeacherClassServlet extends HttpServlet {
         }
     }
 }
-

@@ -14,6 +14,9 @@
     <c:if test="${sessionScope.authUser != null && sessionScope.authUser.roleCodes.contains('ADMIN')}">
         <div class="app-nav-title">Admin</div>
         <div class="app-nav-section">
+            <a class="app-nav-link ${param.active == 'audit-logs' ? 'active' : ''}" href="${pageContext.request.contextPath}/admin/audit-logs">
+                <i class="bi bi-journal-text"></i><span>Audit log</span>
+            </a>
             <a class="app-nav-link ${param.active == 'courses' ? 'active' : ''}" href="${pageContext.request.contextPath}/admin/courses">
                 <i class="bi bi-journal-bookmark"></i><span>Khóa học</span>
             </a>
@@ -56,6 +59,9 @@
             <a class="app-nav-link ${param.active == 'invoices' ? 'active' : ''}" href="${pageContext.request.contextPath}/accounting/invoices">
                 <i class="bi bi-receipt"></i><span>Hóa đơn</span>
             </a>
+            <a class="app-nav-link ${param.active == 'payment-requests' ? 'active' : ''}" href="${pageContext.request.contextPath}/accounting/payment-requests">
+                <i class="bi bi-bell"></i><span>Yêu cầu thu tiền</span>
+            </a>
             <a class="app-nav-link ${param.active == 'revenue-report' ? 'active' : ''}" href="${pageContext.request.contextPath}/accounting/reports/revenue">
                 <i class="bi bi-graph-up-arrow"></i><span>Doanh thu</span>
             </a>
@@ -77,6 +83,12 @@
     <c:if test="${sessionScope.authUser != null && sessionScope.authUser.roleCodes.contains('STUDENT')}">
         <div class="app-nav-title">Học viên</div>
         <div class="app-nav-section">
+            <a class="app-nav-link ${param.active == 'student-classes' ? 'active' : ''}" href="${pageContext.request.contextPath}/student/classes">
+                <i class="bi bi-ui-checks"></i><span>Đăng ký học</span>
+            </a>
+            <a class="app-nav-link ${param.active == 'student-wallet' ? 'active' : ''}" href="${pageContext.request.contextPath}/student/wallet">
+                <i class="bi bi-wallet2"></i><span>Ví</span>
+            </a>
             <a class="app-nav-link ${param.active == 'student-timetable' ? 'active' : ''}" href="${pageContext.request.contextPath}/student/timetable">
                 <i class="bi bi-calendar3"></i><span>Lịch học</span>
             </a>

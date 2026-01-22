@@ -104,7 +104,7 @@ public class ClassCreateServlet extends HttpServlet {
     }
 
     private void loadSelectData(HttpServletRequest req) throws Exception {
-        List<Course> courses = courseDAO.listAll("ACTIVE");
+        List<Course> courses = courseDAO.listAll("ACTIVE", null);
         List<Teacher> teachers = teacherDAO.listActive();
         List<Room> rooms = roomDAO.listActive();
         req.setAttribute("courses", courses);

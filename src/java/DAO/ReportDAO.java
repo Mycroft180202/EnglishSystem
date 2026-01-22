@@ -13,6 +13,18 @@ public class ReportDAO extends DBContext {
         public String day; // yyyy-MM-dd
         public BigDecimal total;
         public int paymentCount;
+
+        public String getDay() {
+            return day;
+        }
+
+        public BigDecimal getTotal() {
+            return total;
+        }
+
+        public int getPaymentCount() {
+            return paymentCount;
+        }
     }
 
     public List<RevenueRow> revenueByDay(YearMonth month) throws Exception {
@@ -43,4 +55,3 @@ public class ReportDAO extends DBContext {
         return result;
     }
 }
-

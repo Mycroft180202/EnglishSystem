@@ -26,7 +26,7 @@ public class AssessmentCreateServlet extends HttpServlet {
             req.setCharacterEncoding("UTF-8");
             resp.setCharacterEncoding("UTF-8");
 
-            List<Course> courses = courseDAO.listAll("ACTIVE");
+            List<Course> courses = courseDAO.listAll("ACTIVE", null);
             req.setAttribute("courses", courses);
             req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
             req.setAttribute("mode", "create");
@@ -52,7 +52,7 @@ public class AssessmentCreateServlet extends HttpServlet {
             if (validation != null) {
                 req.setAttribute("error", validation);
                 req.setAttribute("assessment", a);
-                req.setAttribute("courses", courseDAO.listAll("ACTIVE"));
+                req.setAttribute("courses", courseDAO.listAll("ACTIVE", null));
                 req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
                 req.setAttribute("mode", "create");
                 req.getRequestDispatcher("/WEB-INF/views/admin/assessment_form.jsp").forward(req, resp);
@@ -63,7 +63,7 @@ public class AssessmentCreateServlet extends HttpServlet {
             if (conflict != null) {
                 req.setAttribute("error", "Mỗi khóa học chỉ nên có 1 đầu điểm cho mỗi loại (Test 1/Test 2/Final).");
                 req.setAttribute("assessment", a);
-                req.setAttribute("courses", courseDAO.listAll("ACTIVE"));
+                req.setAttribute("courses", courseDAO.listAll("ACTIVE", null));
                 req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
                 req.setAttribute("mode", "create");
                 req.getRequestDispatcher("/WEB-INF/views/admin/assessment_form.jsp").forward(req, resp);
@@ -75,7 +75,7 @@ public class AssessmentCreateServlet extends HttpServlet {
             } catch (Exception ex) {
                 req.setAttribute("error", "Không thể tạo (có thể bị trùng trong cùng khóa học).");
                 req.setAttribute("assessment", a);
-                req.setAttribute("courses", courseDAO.listAll("ACTIVE"));
+                req.setAttribute("courses", courseDAO.listAll("ACTIVE", null));
                 req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
                 req.setAttribute("mode", "create");
                 req.getRequestDispatcher("/WEB-INF/views/admin/assessment_form.jsp").forward(req, resp);

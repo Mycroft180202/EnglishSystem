@@ -42,6 +42,9 @@ public class ClassScheduleServlet extends HttpServlet {
 
             Flash.consume(req);
             int classId = parseInt(req.getParameter("classId"), -1);
+            if (classId > 0) {
+                try { classDAO.syncRoomFromSchedules(classId); } catch (Exception ignored) {}
+            }
             CenterClass clazz = classId > 0 ? classDAO.findById(classId) : null;
             if (clazz == null) {
                 Flash.error(req, "Vui lòng chọn lớp để xem lịch học.");
@@ -82,7 +85,16 @@ public class ClassScheduleServlet extends HttpServlet {
             if ("delete".equalsIgnoreCase(action)) {
                 int scheduleId = parseInt(req.getParameter("scheduleId"), -1);
                 if (scheduleId > 0) {
+                    ClassSchedule toDelete = scheduleDAO.findById(scheduleId);
+                    if (toDelete == null || toDelete.getClassId() != classId) {
+                        Flash.error(req, "Lịch học không hợp lệ.");
+                        resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
+                        return;
+                    }
                     scheduleDAO.delete(scheduleId);
+                    classDAO.syncRoomFromSchedules(classId);
+                    int deletedSessions = sessionDAO.deleteScheduledByDaySlotFromDate(classId, toDelete.getDayOfWeek(), toDelete.getSlotId(), LocalDate.now());
+                    Flash.success(req, "Da xoa " + deletedSessions + " buoi SCHEDULED tu hom nay tro di.");
                     Flash.success(req, "Xóa lịch học thành công.");
                 }
                 resp.sendRedirect(req.getContextPath() + "/admin/class-schedules?classId=" + classId);
@@ -132,9 +144,13 @@ public class ClassScheduleServlet extends HttpServlet {
 
                 try {
                     scheduleDAO.update(s);
+                    classDAO.syncRoomFromSchedules(classId);
                     if ("1".equals(trim(req.getParameter("updateSessions")))) {
-                        int deleted = sessionDAO.deleteScheduledFromDate(classId, LocalDate.now());
-                        int inserted = sessionDAO.generateFromSchedules(classId, LocalDate.now(), null);
+                        LocalDate from = parseDate(req.getParameter("effectiveFrom"));
+                        LocalDate today = LocalDate.now();
+                        if (from == null || from.isBefore(today)) from = today;
+                        int deleted = sessionDAO.deleteScheduledFromDate(classId, from);
+                        int inserted = sessionDAO.generateFromSchedules(classId, from, null);
                         Flash.success(req, "Đã cập nhật lịch. Rebuild buổi học: xóa " + deleted + " và tạo " + inserted + " buổi mới.");
                     } else {
                         Flash.success(req, "Đã cập nhật lịch học.");
@@ -197,6 +213,7 @@ public class ClassScheduleServlet extends HttpServlet {
 
             try {
                 scheduleDAO.create(s);
+                classDAO.syncRoomFromSchedules(classId);
                 Flash.success(req, "Thêm lịch học thành công.");
             } catch (Exception ex) {
                 Flash.error(req, "Không thể thêm lịch (có thể trùng phòng/trùng giáo viên/trùng ca).");

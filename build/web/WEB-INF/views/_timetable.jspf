@@ -73,6 +73,9 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </c:if>
+                                <c:if test="${sess.status == 'CANCELLED'}">
+                                    <c:set var="cardClass" value="timetable-card timetable-card--cancelled"/>
+                                </c:if>
                                 <div class="${cardClass} js-session-card"
                                      role="button"
                                      tabindex="0"
@@ -331,6 +334,11 @@
                 if (base && card.dataset.sessionId) {
                     attBtn.href = base + card.dataset.sessionId;
                 }
+                if (status === 'CANCELLED') {
+                    attBtn.classList.add('disabled');
+                    attBtn.setAttribute('aria-disabled', 'true');
+                    attBtn.setAttribute('tabindex', '-1');
+                }
                 if (onlyToday && rawDate) {
                     var todayStr = '${today}';
                     if (todayStr && rawDate !== todayStr) {
@@ -350,6 +358,12 @@
                 var base2 = '${absenceRequestBase}';
                 if (base2 && card.dataset.sessionId) {
                     absBtn.href = base2 + card.dataset.sessionId;
+                }
+                if (status === 'CANCELLED') {
+                    absBtn.classList.add('disabled');
+                    absBtn.setAttribute('aria-disabled', 'true');
+                    absBtn.setAttribute('tabindex', '-1');
+                    absBtn.title = 'Buổi học đã bị hủy';
                 }
                 if (rawDate && card.dataset.startTime) {
                     var now = new Date();
@@ -376,18 +390,20 @@
             var statusEl = document.getElementById('sd-status');
             var iconEl = document.getElementById('sd-statusIcon');
             var textEl = document.getElementById('sd-statusText');
-            if (textEl) textEl.textContent = status || 'SCHEDULED';
+            if (textEl) textEl.textContent = (status && status !== 'SCHEDULED') ? status : '';
 
             if (statusEl) {
-                statusEl.classList.remove('sd-status--absent', 'sd-status--done', 'sd-status--upcoming');
-                if (attendanceStatus === 'ABSENT') statusEl.classList.add('sd-status--absent');
+                statusEl.classList.remove('sd-status--absent', 'sd-status--done', 'sd-status--upcoming', 'sd-status--excused', 'sd-status--cancelled');
+                if (status === 'CANCELLED') statusEl.classList.add('sd-status--cancelled');
+                else if (attendanceStatus === 'ABSENT') statusEl.classList.add('sd-status--absent');
                 else if (attendanceStatus === 'EXCUSED') statusEl.classList.add('sd-status--excused');
                 else if (attendanceStatus) statusEl.classList.add('sd-status--done');
                 else statusEl.classList.add('sd-status--upcoming');
             }
             if (iconEl) {
                 iconEl.className = 'bi';
-                if (attendanceStatus === 'ABSENT') iconEl.classList.add('bi-x-circle', 'text-danger');
+                if (status === 'CANCELLED') iconEl.classList.add('bi-x-octagon', 'text-danger');
+                else if (attendanceStatus === 'ABSENT') iconEl.classList.add('bi-x-circle', 'text-danger');
                 else if (attendanceStatus === 'EXCUSED') iconEl.classList.add('bi-check-circle', 'text-warning');
                 else if (attendanceStatus) iconEl.classList.add('bi-check-circle', 'text-success');
                 else iconEl.classList.add('bi-calendar-event', 'text-primary');

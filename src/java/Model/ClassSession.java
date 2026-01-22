@@ -29,6 +29,7 @@ public class ClassSession implements Serializable {
     private String assessName;
     private String attendanceStatus;
     private String attendanceMarkedAt;
+    private String teacherCheckinAt;
 
     public int getSessionId() {
         return sessionId;
@@ -212,5 +213,13 @@ public class ClassSession implements Serializable {
 
     public void setAttendanceMarkedAt(String attendanceMarkedAt) {
         this.attendanceMarkedAt = attendanceMarkedAt;
+    }
+
+    public String getTeacherCheckinAt() {
+        return teacherCheckinAt;
+    }
+
+    public void setTeacherCheckinAt(String teacherCheckinAt) {
+        this.teacherCheckinAt = teacherCheckinAt;
     }
 }

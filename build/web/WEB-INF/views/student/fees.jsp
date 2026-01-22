@@ -7,6 +7,13 @@
         <h3 class="m-0">Học phí</h3>
     </div>
 
+    <c:if test="${not empty flashSuccess}">
+        <div class="alert alert-success"><c:out value="${flashSuccess}"/></div>
+    </c:if>
+    <c:if test="${not empty flashError}">
+        <div class="alert alert-danger"><c:out value="${flashError}"/></div>
+    </c:if>
+
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
             <thead>
@@ -19,6 +26,7 @@
                     <th>Đã thu</th>
                     <th>Còn lại</th>
                     <th>Trạng thái</th>
+                    <th class="text-end">Thanh toán</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,11 +40,18 @@
                         <td><t:vnd value="${i.paidAmount}"/></td>
                         <td><t:vnd value="${i.remainingAmount}"/></td>
                         <td><span class="badge text-bg-secondary"><c:out value="${i.status}"/></span></td>
+                        <td class="text-end">
+                            <c:if test="${i.status != 'PAID' && i.status != 'VOID'}">
+                                <a class="btn btn-sm btn-outline-primary" href="${pageContext.request.contextPath}/student/pay/payos?invoiceId=${i.invoiceId}">
+                                    PayOS
+                                </a>
+                            </c:if>
+                        </td>
                     </tr>
                 </c:forEach>
                 <c:if test="${empty invoices}">
                     <tr>
-                        <td colspan="8" class="text-center text-muted">Chưa có hóa đơn.</td>
+                        <td colspan="9" class="text-center text-muted">Chưa có hóa đơn.</td>
                     </tr>
                 </c:if>
             </tbody>

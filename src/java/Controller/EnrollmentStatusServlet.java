@@ -33,7 +33,8 @@ public class EnrollmentStatusServlet extends HttpServlet {
     }
 
     private static boolean isValid(String s) {
-        return "ACTIVE".equals(s) || "CANCELLED".equals(s) || "COMPLETED".equals(s) || "PENDING".equals(s);
+        // Activation happens only after payment (PayOS) or accounting approval (cash requests).
+        return "CANCELLED".equals(s) || "COMPLETED".equals(s) || "PENDING".equals(s);
     }
 
     private static int parseInt(String s, int fallback) {
@@ -55,4 +56,3 @@ public class EnrollmentStatusServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 }
-

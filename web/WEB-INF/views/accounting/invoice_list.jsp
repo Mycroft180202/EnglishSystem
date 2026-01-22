@@ -67,6 +67,13 @@
                         <td><span class="badge text-bg-secondary"><c:out value="${i.status}"/></span></td>
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary" href="${pageContext.request.contextPath}/accounting/invoices/view?id=${i.invoiceId}">Xem</a>
+                            <c:if test="${sessionScope.authUser.roleCodes.contains('ADMIN')}">
+                                <form class="d-inline" method="post" action="${pageContext.request.contextPath}/accounting/invoices/delete">
+                                    <input type="hidden" name="id" value="${i.invoiceId}">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit"
+                                            onclick="return confirm('Xóa hóa đơn này?');">Xóa</button>
+                                </form>
+                            </c:if>
                         </td>
                     </tr>
                 </c:forEach>

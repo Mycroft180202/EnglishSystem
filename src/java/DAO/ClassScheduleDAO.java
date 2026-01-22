@@ -92,6 +92,38 @@ public class ClassScheduleDAO extends DBContext {
         }
     }
 
+    public ClassSchedule findById(int scheduleId) throws Exception {
+        String sql = """
+                SELECT cs.schedule_id, cs.class_id, cs.day_of_week, cs.slot_id, cs.room_id, cs.teacher_id,
+                       ts.name AS slot_name, CONVERT(varchar(5), ts.start_time, 108) AS start_time,
+                       CONVERT(varchar(5), ts.end_time, 108) AS end_time,
+                       r.room_name
+                FROM dbo.class_schedules cs
+                JOIN dbo.time_slots ts ON cs.slot_id = ts.slot_id
+                JOIN dbo.rooms r ON cs.room_id = r.room_id
+                WHERE cs.schedule_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, scheduleId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                ClassSchedule s = new ClassSchedule();
+                s.setScheduleId(rs.getInt("schedule_id"));
+                s.setClassId(rs.getInt("class_id"));
+                s.setDayOfWeek(rs.getInt("day_of_week"));
+                s.setSlotId(rs.getInt("slot_id"));
+                s.setRoomId(rs.getInt("room_id"));
+                s.setTeacherId(rs.getInt("teacher_id"));
+                s.setSlotName(rs.getString("slot_name"));
+                s.setStartTime(rs.getString("start_time"));
+                s.setEndTime(rs.getString("end_time"));
+                s.setRoomName(rs.getString("room_name"));
+                return s;
+            }
+        }
+    }
+
     private static ClassSchedule map(ResultSet rs) throws Exception {
         ClassSchedule s = new ClassSchedule();
         s.setScheduleId(rs.getInt("schedule_id"));
