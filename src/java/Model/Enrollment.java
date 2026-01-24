@@ -2,6 +2,7 @@ package Model;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDate;
 
 public class Enrollment implements Serializable {
     private int enrollId;
@@ -16,6 +17,9 @@ public class Enrollment implements Serializable {
     private String classCode;
     private String className;
     private String courseName;
+    private LocalDate classStartDate;
+    private LocalDate classEndDate;
+    private boolean hasSchedule;
     private Integer invoiceId;
     private String invoiceStatus;
 
@@ -97,6 +101,30 @@ public class Enrollment implements Serializable {
 
     public void setCourseName(String courseName) {
         this.courseName = courseName;
+    }
+
+    public LocalDate getClassStartDate() {
+        return classStartDate;
+    }
+
+    public void setClassStartDate(LocalDate classStartDate) {
+        this.classStartDate = classStartDate;
+    }
+
+    public LocalDate getClassEndDate() {
+        return classEndDate;
+    }
+
+    public void setClassEndDate(LocalDate classEndDate) {
+        this.classEndDate = classEndDate;
+    }
+
+    public boolean isHasSchedule() {
+        return hasSchedule;
+    }
+
+    public void setHasSchedule(boolean hasSchedule) {
+        this.hasSchedule = hasSchedule;
     }
 
     public Integer getInvoiceId() {

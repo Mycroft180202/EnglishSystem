@@ -38,16 +38,7 @@ public class WalletDAO extends DBContext {
             boolean oldAuto = con.getAutoCommit();
             con.setAutoCommit(false);
             try {
-                ensureWallet(con, studentId);
-
-                try (PreparedStatement ps = con.prepareStatement(
-                        "UPDATE dbo.student_wallets SET balance = balance + ?, updated_at = SYSUTCDATETIME() WHERE student_id = ?")) {
-                    ps.setBigDecimal(1, amount);
-                    ps.setInt(2, studentId);
-                    ps.executeUpdate();
-                }
-
-                insertTxn(con, studentId, amount, "TOPUP", null, note, createdByUserId);
+                credit(con, studentId, amount, "TOPUP", null, note, createdByUserId);
                 con.commit();
             } catch (Exception ex) {
                 con.rollback();
@@ -64,29 +55,7 @@ public class WalletDAO extends DBContext {
             boolean oldAuto = con.getAutoCommit();
             con.setAutoCommit(false);
             try {
-                ensureWallet(con, studentId);
-
-                BigDecimal balance;
-                try (PreparedStatement ps = con.prepareStatement("SELECT balance FROM dbo.student_wallets WITH (UPDLOCK, ROWLOCK) WHERE student_id = ?")) {
-                    ps.setInt(1, studentId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) balance = BigDecimal.ZERO;
-                        else {
-                            balance = rs.getBigDecimal("balance");
-                            if (balance == null) balance = BigDecimal.ZERO;
-                        }
-                    }
-                }
-                if (balance.compareTo(amount) < 0) throw new IllegalStateException("INSUFFICIENT_BALANCE");
-
-                try (PreparedStatement ps = con.prepareStatement(
-                        "UPDATE dbo.student_wallets SET balance = balance - ?, updated_at = SYSUTCDATETIME() WHERE student_id = ?")) {
-                    ps.setBigDecimal(1, amount);
-                    ps.setInt(2, studentId);
-                    ps.executeUpdate();
-                }
-
-                insertTxn(con, studentId, amount.negate(), "ENROLLMENT_FEE", enrollId, note, createdByUserId);
+                debit(con, studentId, amount, "ENROLLMENT_FEE", enrollId, note, createdByUserId);
                 con.commit();
             } catch (Exception ex) {
                 con.rollback();
@@ -95,6 +64,46 @@ public class WalletDAO extends DBContext {
                 con.setAutoCommit(oldAuto);
             }
         }
+    }
+
+    public void credit(Connection con, int studentId, BigDecimal amount, String txnType, Integer enrollId, String note, Integer createdByUserId) throws Exception {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("amount");
+        ensureWallet(con, studentId);
+        try (PreparedStatement ps = con.prepareStatement(
+                "UPDATE dbo.student_wallets SET balance = balance + ?, updated_at = SYSUTCDATETIME() WHERE student_id = ?")) {
+            ps.setBigDecimal(1, amount);
+            ps.setInt(2, studentId);
+            ps.executeUpdate();
+        }
+        insertTxn(con, studentId, amount, txnType, enrollId, note, createdByUserId);
+    }
+
+    public void debit(Connection con, int studentId, BigDecimal amount, String txnType, Integer enrollId, String note, Integer createdByUserId) throws Exception {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("amount");
+        ensureWallet(con, studentId);
+
+        BigDecimal balance;
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT balance FROM dbo.student_wallets WITH (UPDLOCK, ROWLOCK) WHERE student_id = ?")) {
+            ps.setInt(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) balance = BigDecimal.ZERO;
+                else {
+                    balance = rs.getBigDecimal("balance");
+                    if (balance == null) balance = BigDecimal.ZERO;
+                }
+            }
+        }
+        if (balance.compareTo(amount) < 0) throw new IllegalStateException("INSUFFICIENT_BALANCE");
+
+        try (PreparedStatement ps = con.prepareStatement(
+                "UPDATE dbo.student_wallets SET balance = balance - ?, updated_at = SYSUTCDATETIME() WHERE student_id = ?")) {
+            ps.setBigDecimal(1, amount);
+            ps.setInt(2, studentId);
+            ps.executeUpdate();
+        }
+
+        insertTxn(con, studentId, amount.negate(), txnType, enrollId, note, createdByUserId);
     }
 
     private static void insertTxn(Connection con, int studentId, BigDecimal amount, String type, Integer enrollId, String note, Integer createdByUserId) throws Exception {
@@ -116,4 +125,3 @@ public class WalletDAO extends DBContext {
         }
     }
 }
-

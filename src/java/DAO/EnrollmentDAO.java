@@ -1,7 +1,9 @@
 package DAO;
 
 import Model.Enrollment;
+import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -10,6 +12,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EnrollmentDAO extends DBContext {
+    public static final class RefundResult {
+        public boolean ok;
+        public boolean refunded;
+        public String message;
+
+        public static RefundResult ok(boolean refunded, String message) {
+            RefundResult r = new RefundResult();
+            r.ok = true;
+            r.refunded = refunded;
+            r.message = message;
+            return r;
+        }
+
+        public static RefundResult fail(String message) {
+            RefundResult r = new RefundResult();
+            r.ok = false;
+            r.refunded = false;
+            r.message = message;
+            return r;
+        }
+    }
+
     public static final class EnrollPayInfo {
         private int enrollId;
         private int studentId;
@@ -33,7 +57,9 @@ public class EnrollmentDAO extends DBContext {
                 SELECT e.enroll_id, e.student_id, e.class_id, e.enrolled_at, e.status,
                        i.invoice_id, i.status AS invoice_status,
                        s.full_name AS student_name, s.phone AS student_phone,
-                       c.class_code, c.class_name, cr.course_name
+                       c.class_code, c.class_name, cr.course_name,
+                       c.start_date, c.end_date,
+                       CASE WHEN EXISTS (SELECT 1 FROM dbo.class_schedules cs WHERE cs.class_id = c.class_id) THEN 1 ELSE 0 END AS has_schedule
                 FROM dbo.enrollments e
                 JOIN dbo.students s ON e.student_id = s.student_id
                 JOIN dbo.classes c ON e.class_id = c.class_id
@@ -181,6 +207,150 @@ public class EnrollmentDAO extends DBContext {
         }
     }
 
+    private static void setStatus(Connection con, int enrollId, String status) throws Exception {
+        String sql = "UPDATE dbo.enrollments SET status = ? WHERE enroll_id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, enrollId);
+            ps.executeUpdate();
+        }
+    }
+
+    public RefundResult refundToWalletIfNeeded(int enrollId, Integer actorUserId) throws Exception {
+        try (Connection con = getConnection()) {
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                RefundResult r = refundToWalletIfNeeded(con, enrollId, actorUserId);
+                if (!r.ok) {
+                    con.rollback();
+                    return r;
+                }
+                con.commit();
+                return r;
+            } catch (Exception ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+        }
+    }
+
+    public RefundResult cancelWithRefundToWallet(int enrollId, Integer actorUserId) throws Exception {
+        try (Connection con = getConnection()) {
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                RefundResult r = refundToWalletIfNeeded(con, enrollId, actorUserId);
+                if (!r.ok) {
+                    con.rollback();
+                    return r;
+                }
+                setStatus(con, enrollId, "CANCELLED");
+                con.commit();
+                if (r.refunded) return RefundResult.ok(true, "Đã hủy đăng ký và hoàn tiền về ví.");
+                return RefundResult.ok(false, "Đã hủy đăng ký.");
+            } catch (Exception ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+        }
+    }
+
+    private RefundResult refundToWalletIfNeeded(Connection con, int enrollId, Integer actorUserId) throws Exception {
+        String sql = """
+                SELECT e.student_id, e.class_id,
+                       i.invoice_id, i.status AS invoice_status, i.paid_amount
+                FROM dbo.enrollments e
+                LEFT JOIN dbo.invoices i WITH (UPDLOCK, ROWLOCK) ON i.enroll_id = e.enroll_id
+                WHERE e.enroll_id = ?
+                """;
+
+        int studentId;
+        int classId;
+        Integer invoiceId;
+        String invoiceStatus;
+        BigDecimal paidAmount;
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, enrollId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return RefundResult.fail("Không tìm thấy đăng ký để hoàn tiền.");
+                studentId = rs.getInt("student_id");
+                classId = rs.getInt("class_id");
+                int inv = rs.getInt("invoice_id");
+                invoiceId = rs.wasNull() ? null : inv;
+                invoiceStatus = rs.getString("invoice_status");
+                paidAmount = rs.getBigDecimal("paid_amount");
+            }
+        }
+
+        // Refund rule: if learned > 20% sessions, do not refund.
+        Progress p = getClassProgress(con, classId);
+        if (p.totalSessions > 0 && (p.completedSessions * 5L) > p.totalSessions) {
+            return RefundResult.fail("Học viên đã học hơn 20% số buổi nên không được hoàn tiền.");
+        }
+
+        if (invoiceId == null || paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return RefundResult.ok(false, "Không có khoản thanh toán để hoàn tiền.");
+        }
+        if ("VOID".equalsIgnoreCase(invoiceStatus)) {
+            return RefundResult.ok(false, "Hóa đơn đã VOID (đã hoàn hoặc hủy trước đó).");
+        }
+        if (refundTxnExists(con, enrollId)) {
+            return RefundResult.ok(false, "Đã hoàn tiền trước đó.");
+        }
+
+        WalletDAO walletDAO = new WalletDAO();
+        InvoiceDAO invoiceDAO = new InvoiceDAO();
+
+        walletDAO.credit(con, studentId, paidAmount, "REFUND", enrollId,
+                "Refund for enrollment #" + enrollId + ", invoice #" + invoiceId,
+                actorUserId);
+
+        invoiceDAO.updatePaidAmountAndStatus(con, invoiceId, BigDecimal.ZERO, "VOID");
+
+        return RefundResult.ok(true, "Đã hoàn tiền về ví.");
+    }
+
+    private static final class Progress {
+        int totalSessions;
+        int completedSessions;
+    }
+
+    private static Progress getClassProgress(Connection con, int classId) throws Exception {
+        Progress p = new Progress();
+        String totalSql = "SELECT COUNT(*) AS cnt FROM dbo.class_sessions WHERE class_id = ? AND status <> N'CANCELLED'";
+        String doneSql = "SELECT COUNT(*) AS cnt FROM dbo.class_sessions WHERE class_id = ? AND status = N'COMPLETED'";
+        try (PreparedStatement ps = con.prepareStatement(totalSql)) {
+            ps.setInt(1, classId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                p.totalSessions = rs.getInt("cnt");
+            }
+        }
+        try (PreparedStatement ps = con.prepareStatement(doneSql)) {
+            ps.setInt(1, classId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                p.completedSessions = rs.getInt("cnt");
+            }
+        }
+        return p;
+    }
+
+    private static boolean refundTxnExists(Connection con, int enrollId) throws Exception {
+        String sql = "SELECT TOP 1 1 FROM dbo.wallet_transactions WHERE enroll_id = ? AND txn_type = N'REFUND'";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, enrollId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
     public EnrollPayInfo findPayInfo(int enrollId) throws Exception {
         String sql = """
                 SELECT e.enroll_id, e.student_id, e.class_id, e.status AS enroll_status,
@@ -220,6 +390,17 @@ public class EnrollmentDAO extends DBContext {
         if (t != null) e.setEnrolledAt(t.toInstant());
         e.setStatus(rs.getString("status"));
         try {
+            Date sd = rs.getDate("start_date");
+            if (sd != null) e.setClassStartDate(sd.toLocalDate());
+        } catch (Exception ignored) {}
+        try {
+            Date ed = rs.getDate("end_date");
+            if (ed != null) e.setClassEndDate(ed.toLocalDate());
+        } catch (Exception ignored) {}
+        try {
+            e.setHasSchedule(rs.getInt("has_schedule") == 1);
+        } catch (Exception ignored) {}
+        try {
             int inv = rs.getInt("invoice_id");
             e.setInvoiceId(rs.wasNull() ? null : inv);
         } catch (Exception ignored) {}
@@ -250,7 +431,8 @@ public class EnrollmentDAO extends DBContext {
                 exec(con, "DELETE FROM dbo.vietqr_payment_intents WHERE enroll_id = ?", enrollId);
                 exec(con, "DELETE FROM dbo.payos_payment_intents WHERE enroll_id = ?", enrollId);
                 exec(con, "DELETE FROM dbo.invoices WHERE enroll_id = ?", enrollId);
-                exec(con, "DELETE FROM dbo.wallet_transactions WHERE enroll_id = ?", enrollId);
+                // Keep wallet ledger, but detach from enroll_id to satisfy FK before deleting enrollment.
+                exec(con, "UPDATE dbo.wallet_transactions SET enroll_id = NULL WHERE enroll_id = ?", enrollId);
 
                 int deleted = exec(con, "DELETE FROM dbo.enrollments WHERE enroll_id = ?", enrollId);
                 con.commit();

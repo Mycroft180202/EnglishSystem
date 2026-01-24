@@ -81,7 +81,7 @@ public class CassoWebhookServlet extends HttpServlet {
                 boolean updated = vietQrDAO.markPaid(qrRef, txnRef, bodyText);
                 if (updated) {
                     paymentDAO.addPayment(intent.getInvoiceId(), intent.getAmount(), "VIETQR", txnRef, null);
-                    enrollmentDAO.setStatus(intent.getEnrollId(), "ACTIVE");
+                    // Keep enrollment as PENDING; Admin/Consultant will approve the student into the class.
                     updatedCount++;
                 }
             }

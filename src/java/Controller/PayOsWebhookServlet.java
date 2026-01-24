@@ -89,7 +89,7 @@ public class PayOsWebhookServlet extends HttpServlet {
                     } catch (IllegalStateException ex) {
                         // Ignore: invoice may have been settled already by another method.
                     }
-                    enrollmentDAO.setStatus(intent.getEnrollId(), "ACTIVE");
+                    // Keep enrollment as PENDING; Admin/Consultant will approve the student into the class.
                 }
             } else {
                 PayOsWalletTopupDAO.IntentRow topup = walletTopupDAO.findByOrderCode(orderCode);

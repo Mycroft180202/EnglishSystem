@@ -135,9 +135,9 @@ public class StudentEnrollServlet extends HttpServlet {
                 }
 
                 paymentDAO.addPayment(invoiceId, fee, "WALLET", "WALLET", user.getUserId());
-                enrollmentDAO.setStatus(enrollId, "ACTIVE");
-                Flash.success(req, "Đăng ký thành công và đã trừ tiền từ ví.");
-                resp.sendRedirect(req.getContextPath() + "/student/timetable");
+                // Paid, but student must wait for Admin/Consultant approval to join the class.
+                Flash.success(req, "Đã thanh toán bằng ví. Vui lòng chờ Admin/Nhân viên tư vấn duyệt vào lớp.");
+                resp.sendRedirect(req.getContextPath() + "/student/classes");
                 return;
             }
 

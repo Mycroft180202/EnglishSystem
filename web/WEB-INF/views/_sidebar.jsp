@@ -1,4 +1,4 @@
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <div class="p-3">
@@ -50,6 +50,9 @@
             <a class="app-nav-link ${param.active == 'enrollments' ? 'active' : ''}" href="${pageContext.request.contextPath}/consultant/enrollments">
                 <i class="bi bi-clipboard-check"></i><span>Đăng ký học</span>
             </a>
+            <a class="app-nav-link ${param.active == 'wallet-withdrawals' ? 'active' : ''}" href="${pageContext.request.contextPath}/consultant/wallet-withdrawals">
+                <i class="bi bi-cash-stack"></i><span>Rút tiền ví</span>
+            </a>
         </div>
     </c:if>
 
@@ -61,6 +64,9 @@
             </a>
             <a class="app-nav-link ${param.active == 'payment-requests' ? 'active' : ''}" href="${pageContext.request.contextPath}/accounting/payment-requests">
                 <i class="bi bi-bell"></i><span>Yêu cầu thu tiền</span>
+            </a>
+            <a class="app-nav-link ${param.active == 'wallet-withdrawals' ? 'active' : ''}" href="${pageContext.request.contextPath}/accounting/wallet-withdrawals">
+                <i class="bi bi-cash-stack"></i><span>Yêu cầu rút tiền</span>
             </a>
             <a class="app-nav-link ${param.active == 'revenue-report' ? 'active' : ''}" href="${pageContext.request.contextPath}/accounting/reports/revenue">
                 <i class="bi bi-graph-up-arrow"></i><span>Doanh thu</span>

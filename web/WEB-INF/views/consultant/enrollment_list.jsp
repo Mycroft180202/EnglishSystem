@@ -89,6 +89,15 @@
                                     Gửi yêu cầu thu tiền
                                 </a>
                             </c:if>
+                            <c:if test="${e.status == 'PENDING' && not empty e.invoiceId && e.invoiceStatus == 'PAID'}">
+                                <form class="d-inline" method="post"
+                                      action="${pageContext.request.contextPath}${pageContext.request.requestURI.contains('/admin/') ? '/admin' : '/consultant'}/enrollments/status">
+                                    <input type="hidden" name="id" value="${e.enrollId}">
+                                    <input type="hidden" name="status" value="ACTIVE">
+                                    <button class="btn btn-sm btn-success" type="submit"
+                                            onclick="return confirm('Duyá»‡t há»c viÃªn vÃ o lá»›p nÃ y?');">Duyá»‡t vÃ o lá»›p</button>
+                                </form>
+                            </c:if>
                             <form class="d-inline" method="post"
                                   action="${pageContext.request.contextPath}${pageContext.request.requestURI.contains('/admin/') ? '/admin' : '/consultant'}/enrollments/status">
                                 <input type="hidden" name="id" value="${e.enrollId}">

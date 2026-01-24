@@ -4,7 +4,9 @@ import DAO.ClassDAO;
 import DAO.EnrollmentDAO;
 import DAO.WalletDAO;
 import Model.CenterClass;
+import Model.Enrollment;
 import Model.User;
+import Util.Flash;
 import Util.SecurityUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,7 +15,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @WebServlet("/student/classes")
 public class StudentClassBrowseServlet extends HttpServlet {
@@ -27,6 +31,7 @@ public class StudentClassBrowseServlet extends HttpServlet {
             req.setCharacterEncoding("UTF-8");
             resp.setCharacterEncoding("UTF-8");
 
+            Flash.consume(req);
             User user = SecurityUtil.currentUser(req);
             if (user == null || user.getStudentId() == null) {
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -36,7 +41,13 @@ public class StudentClassBrowseServlet extends HttpServlet {
 
             List<CenterClass> classes = classDAO.listOpenForStudent(null);
             BigDecimal balance = walletDAO.getBalance(user.getStudentId());
-            req.setAttribute("myEnrollments", enrollmentDAO.listAll(null, user.getStudentId(), "ACTIVE"));
+
+            List<Enrollment> allEnrollments = enrollmentDAO.listAll(null, user.getStudentId(), null);
+            req.setAttribute("myRegistrations", allEnrollments);
+            Map<Integer, Enrollment> enrollByClass = new HashMap<>();
+            for (Enrollment e : allEnrollments) enrollByClass.put(e.getClassId(), e);
+            req.setAttribute("enrollByClass", enrollByClass);
+
             req.setAttribute("classes", classes);
             req.setAttribute("balance", balance);
             req.getRequestDispatcher("/WEB-INF/views/student/classes.jsp").forward(req, resp);

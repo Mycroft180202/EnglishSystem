@@ -2,15 +2,18 @@ package Controller;
 
 import DAO.DeleteResult;
 import DAO.EnrollmentDAO;
+import DAO.EnrollmentDAO.RefundResult;
 import Service.AuditService;
 import Util.Flash;
 import Util.JsonUtil;
+import Util.SecurityUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import Model.User;
 
 @WebServlet("/admin/enrollments/delete")
 public class EnrollmentDeleteServlet extends HttpServlet {
@@ -22,6 +25,18 @@ public class EnrollmentDeleteServlet extends HttpServlet {
         try {
             int id = parseInt(req.getParameter("id"), -1);
             if (id <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/admin/enrollments");
+                return;
+            }
+
+            User actor = SecurityUtil.currentUser(req);
+            Integer actorId = actor == null ? null : actor.getUserId();
+            // Refund (to wallet) first, then delete enrollment + related records.
+            RefundResult rr = enrollmentDAO.refundToWalletIfNeeded(id, actorId);
+            if (!rr.ok) {
+                Flash.error(req, rr.message);
+                auditService.log(req, "DELETE", "ENROLLMENT", String.valueOf(id),
+                        "{" + JsonUtil.kv("result", "FAIL") + "," + JsonUtil.kv("message", rr.message) + "}");
                 resp.sendRedirect(req.getContextPath() + "/admin/enrollments");
                 return;
             }
@@ -47,4 +62,3 @@ public class EnrollmentDeleteServlet extends HttpServlet {
         }
     }
 }
-

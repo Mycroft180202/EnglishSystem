@@ -73,12 +73,12 @@ public class AccountingPaymentRequestServlet extends HttpServlet {
                         paymentDAO.addPayment(r.getInvoiceId(), r.getAmount(), r.getMethod(), "REQ#" + requestId, decidedBy);
                     } catch (IllegalStateException ex) {
                         requestDAO.markRejectedForce(requestId, decidedBy, "Auto rejected: already paid");
-                        enrollmentDAO.setStatus(r.getEnrollId(), "ACTIVE");
+                        // Keep enrollment as PENDING; Admin/Consultant will approve the student into the class.
                         Flash.error(req, "Invoice already PAID. Request rejected.");
                         resp.sendRedirect(req.getContextPath() + "/accounting/payment-requests");
                         return;
                     }
-                    enrollmentDAO.setStatus(r.getEnrollId(), "ACTIVE");
+                    // Keep enrollment as PENDING; Admin/Consultant will approve the student into the class.
                     Flash.success(req, "Đã duyệt và ghi nhận thanh toán.");
                 }
             } else if ("reject".equalsIgnoreCase(action)) {
