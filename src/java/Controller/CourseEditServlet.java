@@ -104,7 +104,7 @@ public class CourseEditServlet extends HttpServlet {
 
     private static Course readCourseFromRequest(HttpServletRequest req) {
         Course c = new Course();
-        c.setCourseCode(trim(req.getParameter("courseCode")));
+        c.setCourseCode(trim(req.getParameter("courseCode")).toUpperCase());
         c.setCourseName(trim(req.getParameter("courseName")));
         c.setDescription(trimToNull(req.getParameter("description")));
         String levelFrom = trimToNull(req.getParameter("levelFrom"));

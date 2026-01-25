@@ -57,7 +57,7 @@ public class EnrollmentDAO extends DBContext {
                 SELECT e.enroll_id, e.student_id, e.class_id, e.enrolled_at, e.status,
                        i.invoice_id, i.status AS invoice_status,
                        s.full_name AS student_name, s.phone AS student_phone,
-                       c.class_code, c.class_name, cr.course_name,
+                       c.class_code, c.class_name, cr.course_name, cr.status AS course_status,
                        c.start_date, c.end_date,
                        CASE WHEN EXISTS (SELECT 1 FROM dbo.class_schedules cs WHERE cs.class_id = c.class_id) THEN 1 ELSE 0 END AS has_schedule
                 FROM dbo.enrollments e
@@ -410,6 +410,7 @@ public class EnrollmentDAO extends DBContext {
         e.setClassCode(rs.getString("class_code"));
         e.setClassName(rs.getString("class_name"));
         e.setCourseName(rs.getString("course_name"));
+        try { e.setCourseStatus(rs.getString("course_status")); } catch (Exception ignored) {}
         return e;
     }
 

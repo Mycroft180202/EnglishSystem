@@ -10,6 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WalletWithdrawalDAO extends DBContext {
+    public static final class StudentOption {
+        private int studentId;
+        private String fullName;
+        private String phone;
+        private BigDecimal balance;
+
+        public int getStudentId() { return studentId; }
+        public String getFullName() { return fullName; }
+        public String getPhone() { return phone; }
+        public BigDecimal getBalance() { return balance; }
+    }
+
     public static final class WithdrawalRow {
         private int requestId;
         private int studentId;
@@ -32,6 +44,38 @@ public class WalletWithdrawalDAO extends DBContext {
         public Integer getCreatedBy() { return createdBy; }
         public java.time.Instant getDecidedAt() { return decidedAt; }
         public Integer getDecidedBy() { return decidedBy; }
+    }
+
+    public List<StudentOption> listActiveStudentsWithBalance(String q) throws Exception {
+        String sql = """
+                SELECT s.student_id, s.full_name, s.phone, COALESCE(w.balance, 0) AS balance
+                FROM dbo.students s
+                LEFT JOIN dbo.student_wallets w ON w.student_id = s.student_id
+                WHERE s.status = N'ACTIVE'
+                  AND (? IS NULL OR s.full_name LIKE ? OR s.phone LIKE ? OR CAST(s.student_id AS nvarchar(20)) LIKE ?)
+                ORDER BY s.student_id ASC
+                """;
+        List<StudentOption> rows = new ArrayList<>();
+        String like = q == null ? null : "%" + q + "%";
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, q);
+            ps.setString(2, like);
+            ps.setString(3, like);
+            ps.setString(4, like);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StudentOption s = new StudentOption();
+                    s.studentId = rs.getInt("student_id");
+                    s.fullName = rs.getString("full_name");
+                    s.phone = rs.getString("phone");
+                    s.balance = rs.getBigDecimal("balance");
+                    if (s.balance == null) s.balance = BigDecimal.ZERO;
+                    rows.add(s);
+                }
+            }
+        }
+        return rows;
     }
 
     public int create(int studentId, BigDecimal amount, String note, Integer createdByUserId) throws Exception {

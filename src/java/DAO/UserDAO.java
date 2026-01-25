@@ -252,6 +252,38 @@ public class UserDAO extends DBContext {
         }
     }
 
+    public void setStatusByTeacherId(int teacherId, String status) throws Exception {
+        String st = normalizeUserStatusFromEntity(status);
+        String sql = "UPDATE dbo.users SET status = ? WHERE teacher_id = ?";
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, st);
+            ps.setInt(2, teacherId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void setStatusByStudentId(int studentId, String status) throws Exception {
+        String st = normalizeUserStatusFromEntity(status);
+        String sql = "UPDATE dbo.users SET status = ? WHERE student_id = ?";
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, st);
+            ps.setInt(2, studentId);
+            ps.executeUpdate();
+        }
+    }
+
+    private static String normalizeUserStatusFromEntity(String status) {
+        if (status == null) return "ACTIVE";
+        String s = status.trim().toUpperCase();
+        // Entity tables use ACTIVE/INACTIVE, but dbo.users allows ACTIVE/LOCKED/DISABLED.
+        if ("INACTIVE".equals(s)) return "DISABLED";
+        if ("ACTIVE".equals(s)) return "ACTIVE";
+        if ("LOCKED".equals(s) || "DISABLED".equals(s)) return s;
+        return "ACTIVE";
+    }
+
     public User authenticate(String username, char[] password) throws Exception {
         User user = findByUsername(username);
         if (user == null) return null;

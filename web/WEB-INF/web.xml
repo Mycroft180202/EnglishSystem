@@ -662,6 +662,24 @@
         <url-pattern>/consultant/payment-requests/create</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>ConsultantWalletWithdrawalListServlet</servlet-name>
+        <servlet-class>Controller.ConsultantWalletWithdrawalListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ConsultantWalletWithdrawalListServlet</servlet-name>
+        <url-pattern>/consultant/wallet-withdrawals</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ConsultantWalletWithdrawalCreateServlet</servlet-name>
+        <servlet-class>Controller.ConsultantWalletWithdrawalCreateServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ConsultantWalletWithdrawalCreateServlet</servlet-name>
+        <url-pattern>/consultant/wallet-withdrawals/create</url-pattern>
+    </servlet-mapping>
+
     <!-- ===== Accounting ===== -->
     <servlet>
         <servlet-name>AccountingPaymentRequestServlet</servlet-name>
@@ -670,6 +688,15 @@
     <servlet-mapping>
         <servlet-name>AccountingPaymentRequestServlet</servlet-name>
         <url-pattern>/accounting/payment-requests</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AccountingWalletWithdrawalServlet</servlet-name>
+        <servlet-class>Controller.AccountingWalletWithdrawalServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AccountingWalletWithdrawalServlet</servlet-name>
+        <url-pattern>/accounting/wallet-withdrawals</url-pattern>
     </servlet-mapping>
 
     <servlet>

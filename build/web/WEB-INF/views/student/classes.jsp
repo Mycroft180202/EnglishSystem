@@ -59,6 +59,9 @@
                                                 <span class="badge text-bg-warning">Chưa có TKB</span>
                                             </c:otherwise>
                                         </c:choose>
+                                        <c:if test="${e.courseStatus == 'INACTIVE'}">
+                                            <span class="badge text-bg-danger ms-1">Khóa học ngưng hoạt động</span>
+                                        </c:if>
                                     </td>
                                     <td>
                                         <c:choose>

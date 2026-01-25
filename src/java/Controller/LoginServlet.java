@@ -65,6 +65,12 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
+            if (existing.getStatus() != null && !"ACTIVE".equalsIgnoreCase(existing.getStatus())) {
+                req.setAttribute("error", "Tài khoản đã bị vô hiệu hóa hoặc bị khóa. Vui lòng liên hệ quản trị.");
+                req.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(req, resp);
+                return;
+            }
+
             User user = userDAO.authenticate(username, password.toCharArray());
             if (user == null) {
                 req.setAttribute("error", "Sai mật khẩu.");

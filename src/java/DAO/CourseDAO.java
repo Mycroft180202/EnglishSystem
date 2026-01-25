@@ -67,6 +67,12 @@ public class CourseDAO extends DBContext {
     }
 
     public int create(Course course) throws Exception {
+        // Extra guard in case the DB constraint was not applied or collation/spacing differences exist.
+        if (course != null && course.getCourseCode() != null && !course.getCourseCode().isBlank()) {
+            Course existing = findByCode(course.getCourseCode().trim());
+            if (existing != null) throw new IllegalArgumentException("DUPLICATE_COURSE_CODE");
+        }
+
         String sql = """
                 INSERT INTO dbo.courses(course_code, course_name, description, level, duration_weeks, standard_fee, status)
                 VALUES(?, ?, ?, ?, ?, ?, ?)

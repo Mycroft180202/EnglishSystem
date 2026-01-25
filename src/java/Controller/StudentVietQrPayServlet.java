@@ -10,6 +10,7 @@ import Model.User;
 import Util.Flash;
 import Util.SecurityUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 
 // Disabled: migrated to PayOS (/student/pay/payos).
+@WebServlet("/student/vietqr")
 public class StudentVietQrPayServlet extends HttpServlet {
     private final StudentFeeDAO feeDAO = new StudentFeeDAO();
     private final InvoiceDAO invoiceDAO = new InvoiceDAO();

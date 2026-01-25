@@ -35,6 +35,12 @@ public class ClassCreateServlet extends HttpServlet {
             req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
             loadSelectData(req);
             req.setAttribute("mode", "create");
+
+            // Default for convenience (end date can be auto-calculated from course duration).
+            CenterClass def = new CenterClass();
+            def.setStartDate(LocalDate.now());
+            req.setAttribute("clazz", def);
+
             req.getRequestDispatcher("/WEB-INF/views/admin/class_form.jsp").forward(req, resp);
         } catch (Exception ex) {
             throw new ServletException(ex);
@@ -53,6 +59,8 @@ public class ClassCreateServlet extends HttpServlet {
             }
 
             CenterClass c = read(req);
+            boolean forceAutoEnd = "1".equals(trim(req.getParameter("autoEndDate")));
+            fillEndDateFromCourseIfMissing(c, forceAutoEnd);
             String validation = validate(c);
             if (validation != null) {
                 req.setAttribute("error", validation);
@@ -101,6 +109,20 @@ public class ClassCreateServlet extends HttpServlet {
         } catch (Exception ex) {
             throw new ServletException(ex);
         }
+    }
+
+    private void fillEndDateFromCourseIfMissing(CenterClass c, boolean force) throws Exception {
+        if (c == null) return;
+        if (c.getStartDate() == null) return;
+        if (!force && c.getEndDate() != null) return;
+        if (c.getCourseId() <= 0) return;
+
+        Course course = courseDAO.findById(c.getCourseId());
+        if (course == null) return;
+        int weeks = course.getDurationWeeks();
+        if (weeks <= 0) return;
+
+        c.setEndDate(c.getStartDate().plusWeeks(weeks).minusDays(1));
     }
 
     private void loadSelectData(HttpServletRequest req) throws Exception {

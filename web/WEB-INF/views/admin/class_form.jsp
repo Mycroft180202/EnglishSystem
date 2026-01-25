@@ -39,10 +39,10 @@
 
         <div class="col-md-6">
             <label class="form-label">Khóa học</label>
-            <select class="form-select" name="courseId" required>
+            <select class="form-select" name="courseId" required id="courseId">
                 <option value="">-- Chọn khóa học --</option>
                 <c:forEach items="${courses}" var="c">
-                    <option value="${c.courseId}" ${cl.courseId == c.courseId ? 'selected' : ''}>
+                    <option value="${c.courseId}" data-weeks="${c.durationWeeks}" ${cl.courseId == c.courseId ? 'selected' : ''}>
                         <c:out value="${c.courseName}"/> (<c:out value="${c.courseCode}"/>)
                     </option>
                 </c:forEach>
@@ -90,16 +90,68 @@
 
         <div class="col-md-6">
             <label class="form-label">Ngày bắt đầu</label>
-            <input class="form-control" type="date" name="startDate" value="${cl.startDate}" required>
+            <input class="form-control" type="date" name="startDate" value="${cl.startDate}" required id="startDate">
         </div>
 
         <div class="col-md-6">
             <label class="form-label">Ngày kết thúc (tùy chọn)</label>
-            <input class="form-control" type="date" name="endDate" value="${cl.endDate}">
+            <input class="form-control" type="date" name="endDate" value="${cl.endDate}" id="endDate">
+            <div class="form-text">Nếu để trống, hệ thống sẽ tự tính theo thời lượng khóa học.</div>
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="autoEndDate" name="autoEndDate" value="1">
+                <label class="form-check-label" for="autoEndDate">
+                    Tự tính lại ngày kết thúc theo số tuần của khóa học
+                </label>
+            </div>
+            <div class="form-text">
+                Bật tùy chọn này để hệ thống tính lại ngày kết thúc = ngày bắt đầu + (số tuần * 7 - 1) ngày.
+            </div>
         </div>
 
         <div class="col-12">
             <button class="btn btn-primary" type="submit">${isEdit ? 'Lưu' : 'Tạo mới'}</button>
         </div>
     </form>
+    <script>
+        (function () {
+            const courseEl = document.getElementById('courseId');
+            const startEl = document.getElementById('startDate');
+            const endEl = document.getElementById('endDate');
+            if (!courseEl || !startEl || !endEl) return;
+
+            function parseYmd(s) {
+                const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+                if (!m) return null;
+                return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+            }
+
+            function fmtYmd(dt) {
+                const y = dt.getUTCFullYear();
+                const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(dt.getUTCDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            function autoFillEndDate() {
+                const auto = autoEndEl && autoEndEl.checked;
+                if (!auto && endEl.value) return;
+                const opt = courseEl.options[courseEl.selectedIndex];
+                const weeks = Number((opt && opt.dataset && opt.dataset.weeks) || 0);
+                if (!weeks || weeks <= 0) return;
+                const start = parseYmd(startEl.value);
+                if (!start) return;
+                const end = new Date(start.getTime() + ((weeks * 7 - 1) * 24 * 60 * 60 * 1000));
+                endEl.value = fmtYmd(end);
+            }
+
+            const autoEndEl = document.getElementById('autoEndDate');
+            courseEl.addEventListener('change', autoFillEndDate);
+            startEl.addEventListener('change', autoFillEndDate);
+            if (autoEndEl) autoEndEl.addEventListener('change', autoFillEndDate);
+            autoFillEndDate();
+        })();
+    </script>
 </t:layout>

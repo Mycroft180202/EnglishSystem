@@ -67,6 +67,7 @@ public class ClassDAO extends DBContext {
                 LEFT JOIN dbo.teachers t ON c.teacher_id = t.teacher_id
                 LEFT JOIN dbo.rooms r ON c.room_id = r.room_id
                 WHERE c.status = N'OPEN'
+                  AND cr.status = N'ACTIVE'
                   AND c.start_date IS NOT NULL
                   AND EXISTS (SELECT 1 FROM dbo.class_schedules cs WHERE cs.class_id = c.class_id)
                   AND (? IS NULL OR c.class_code LIKE ? OR c.class_name LIKE ? OR cr.course_name LIKE ?)

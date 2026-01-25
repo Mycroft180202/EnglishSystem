@@ -38,6 +38,12 @@ public class AuthzFilter implements Filter {
             return;
         }
 
+        // Prevent back-button from showing cached authenticated pages after logout.
+        // (Browser should revalidate and get redirected to /login if session is gone.)
+        resp.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        resp.setHeader("Pragma", "no-cache");
+        resp.setDateHeader("Expires", 0);
+
         User user = SecurityUtil.currentUser(req);
         if (user == null) {
             resp.sendRedirect(ctx + "/login");

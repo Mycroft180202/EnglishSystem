@@ -1,6 +1,7 @@
 package Controller;
 
 import DAO.StudentDAO;
+import DAO.UserDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -11,6 +12,7 @@ import java.io.IOException;
 @WebServlet({"/admin/students/status", "/consultant/students/status"})
 public class StudentStatusServlet extends HttpServlet {
     private final StudentDAO studentDAO = new StudentDAO();
+    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -26,6 +28,7 @@ public class StudentStatusServlet extends HttpServlet {
             }
 
             studentDAO.setStatus(id, status);
+            userDAO.setStatusByStudentId(id, status);
             resp.sendRedirect(req.getContextPath() + basePath(req) + "/students");
         } catch (Exception ex) {
             throw new ServletException(ex);
@@ -51,4 +54,3 @@ public class StudentStatusServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 }
-

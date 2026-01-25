@@ -6,6 +6,7 @@ import DAO.VietQrPaymentDAO;
 import DAO.VietQrPaymentDAO.IntentRow;
 import Util.HmacUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@WebServlet("/api/casso/webhook")
 public class CassoWebhookServlet extends HttpServlet {
     private static final Pattern MARKER = Pattern.compile("ENGLISH-([A-Za-z0-9_\\-]+)");
 

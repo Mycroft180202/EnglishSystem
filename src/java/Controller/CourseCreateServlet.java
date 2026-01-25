@@ -71,7 +71,19 @@ public class CourseCreateServlet extends HttpServlet {
                 return;
             }
 
-            courseDAO.create(c);
+            try {
+                courseDAO.create(c);
+            } catch (IllegalArgumentException iae) {
+                if ("DUPLICATE_COURSE_CODE".equals(iae.getMessage())) {
+                    req.setAttribute("error", "Mã khóa học đã tồn tại.");
+                    req.setAttribute("course", c);
+                    req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+                    req.setAttribute("mode", "create");
+                    req.getRequestDispatcher("/WEB-INF/views/admin/course_form.jsp").forward(req, resp);
+                    return;
+                }
+                throw iae;
+            }
             Flash.success(req, "Tạo khóa học thành công.");
             resp.sendRedirect(req.getContextPath() + "/admin/courses");
         } catch (Exception ex) {
@@ -81,7 +93,7 @@ public class CourseCreateServlet extends HttpServlet {
 
     private static Course readCourseFromRequest(HttpServletRequest req) {
         Course c = new Course();
-        c.setCourseCode(trim(req.getParameter("courseCode")));
+        c.setCourseCode(trim(req.getParameter("courseCode")).toUpperCase());
         c.setCourseName(trim(req.getParameter("courseName")));
         c.setDescription(trimToNull(req.getParameter("description")));
         String levelFrom = trimToNull(req.getParameter("levelFrom"));

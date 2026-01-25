@@ -17,6 +17,7 @@ public class Enrollment implements Serializable {
     private String classCode;
     private String className;
     private String courseName;
+    private String courseStatus;
     private LocalDate classStartDate;
     private LocalDate classEndDate;
     private boolean hasSchedule;
@@ -101,6 +102,14 @@ public class Enrollment implements Serializable {
 
     public void setCourseName(String courseName) {
         this.courseName = courseName;
+    }
+
+    public String getCourseStatus() {
+        return courseStatus;
+    }
+
+    public void setCourseStatus(String courseStatus) {
+        this.courseStatus = courseStatus;
     }
 
     public LocalDate getClassStartDate() {

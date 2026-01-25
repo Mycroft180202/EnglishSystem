@@ -1,11 +1,14 @@
 package Controller;
+
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 // Disabled: migrated to PayOS webhook (/api/payos/webhook).
+@WebServlet("/api/vietqr/callback")
 public class VietQrCallbackServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

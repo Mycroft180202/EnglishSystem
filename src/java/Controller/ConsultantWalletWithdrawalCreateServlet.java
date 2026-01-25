@@ -1,6 +1,10 @@
 package Controller;
 
+import DAO.StudentDAO;
+import DAO.WalletDAO;
 import DAO.WalletWithdrawalDAO;
+import DAO.WalletWithdrawalDAO.StudentOption;
+import Model.Student;
 import Model.User;
 import Util.Flash;
 import Util.FormToken;
@@ -12,19 +16,34 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 
 @WebServlet("/consultant/wallet-withdrawals/create")
 public class ConsultantWalletWithdrawalCreateServlet extends HttpServlet {
     private final WalletWithdrawalDAO withdrawalDAO = new WalletWithdrawalDAO();
+    private final WalletDAO walletDAO = new WalletDAO();
+    private final StudentDAO studentDAO = new StudentDAO();
     private static final String TOKEN_KEY = "consultantWithdrawToken";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
-        Flash.consume(req);
-        req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
-        req.getRequestDispatcher("/WEB-INF/views/consultant/withdrawal_create.jsp").forward(req, resp);
+        try {
+            req.setCharacterEncoding("UTF-8");
+            resp.setCharacterEncoding("UTF-8");
+            Flash.consume(req);
+
+            String q = trim(req.getParameter("q"));
+            if (q.isBlank()) q = null;
+            List<StudentOption> students = withdrawalDAO.listActiveStudentsWithBalance(q);
+            req.setAttribute("students", students);
+            req.setAttribute("q", q);
+            req.setAttribute("selectedStudentId", parseInt(req.getParameter("studentId"), -1));
+
+            req.setAttribute("formToken", FormToken.issue(req, TOKEN_KEY));
+            req.getRequestDispatcher("/WEB-INF/views/consultant/withdrawal_create.jsp").forward(req, resp);
+        } catch (Exception ex) {
+            throw new ServletException(ex);
+        }
     }
 
     @Override
@@ -39,11 +58,41 @@ public class ConsultantWalletWithdrawalCreateServlet extends HttpServlet {
             }
 
             int studentId = parseInt(req.getParameter("studentId"), -1);
-            BigDecimal amount = parseDecimal(req.getParameter("amount"));
+            String mode = trim(req.getParameter("mode"));
+            if (mode.isBlank()) mode = "CUSTOM";
+
+            BigDecimal balance = (studentId > 0) ? walletDAO.getBalance(studentId) : BigDecimal.ZERO;
+            if (balance == null) balance = BigDecimal.ZERO;
+
+            BigDecimal amount;
+            if ("ALL".equalsIgnoreCase(mode)) {
+                amount = balance;
+            } else {
+                amount = parseDecimal(req.getParameter("amount"));
+            }
+
             String note = trim(req.getParameter("note"));
-            if (studentId <= 0 || amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-                Flash.error(req, "Thông tin không hợp lệ.");
+            if (studentId <= 0) {
+                Flash.error(req, "Vui lòng chọn học viên.");
                 resp.sendRedirect(req.getContextPath() + "/consultant/wallet-withdrawals/create");
+                return;
+            }
+
+            Student st = studentDAO.findById(studentId);
+            if (st == null || !"ACTIVE".equalsIgnoreCase(st.getStatus())) {
+                Flash.error(req, "Học viên không hợp lệ hoặc đã ngưng hoạt động.");
+                resp.sendRedirect(req.getContextPath() + "/consultant/wallet-withdrawals/create");
+                return;
+            }
+
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                Flash.error(req, "Số tiền rút không hợp lệ.");
+                resp.sendRedirect(req.getContextPath() + "/consultant/wallet-withdrawals/create?studentId=" + studentId);
+                return;
+            }
+            if (amount.compareTo(balance) > 0) {
+                Flash.error(req, "Số dư ví không đủ để tạo yêu cầu rút tiền.");
+                resp.sendRedirect(req.getContextPath() + "/consultant/wallet-withdrawals/create?studentId=" + studentId);
                 return;
             }
 
@@ -81,4 +130,3 @@ public class ConsultantWalletWithdrawalCreateServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 }
-

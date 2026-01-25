@@ -1,4 +1,4 @@
-﻿package Controller;
+package Controller;
 
 import DAO.EnrollmentDAO;
 import DAO.EnrollmentDAO.EnrollPayInfo;
