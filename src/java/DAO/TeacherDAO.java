@@ -83,6 +83,24 @@ public class TeacherDAO extends DBContext {
         }
     }
 
+    public void updateContact(int teacherId, String fullName, String email, String phone) throws Exception {
+        String sql = """
+                UPDATE dbo.teachers
+                SET full_name = NULLIF(?, N''),
+                    email = NULLIF(?, N''),
+                    phone = NULLIF(?, N'')
+                WHERE teacher_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, fullName == null ? "" : fullName.trim());
+            ps.setString(2, email == null ? "" : email.trim());
+            ps.setString(3, phone == null ? "" : phone.trim());
+            ps.setInt(4, teacherId);
+            ps.executeUpdate();
+        }
+    }
+
     public void setStatus(int teacherId, String status) throws Exception {
         String sql = "UPDATE dbo.teachers SET status = ? WHERE teacher_id = ?";
         try (Connection con = getConnection();

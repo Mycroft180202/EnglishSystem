@@ -6,6 +6,9 @@
         <a class="app-nav-link ${param.active == 'home' ? 'active' : ''}" href="${pageContext.request.contextPath}/app/home">
             <i class="bi bi-speedometer2"></i><span>Dashboard</span>
         </a>
+        <a class="app-nav-link ${param.active == 'profile' ? 'active' : ''}" href="${pageContext.request.contextPath}/app/profile">
+            <i class="bi bi-person"></i><span>Thông tin cá nhân</span>
+        </a>
         <a class="app-nav-link ${param.active == 'change-password' ? 'active' : ''}" href="${pageContext.request.contextPath}/app/change-password">
             <i class="bi bi-shield-lock"></i><span>Đổi mật khẩu</span>
         </a>

@@ -110,6 +110,18 @@ public class StudentEnrollServlet extends HttpServlet {
             }
 
             BigDecimal fee = clazz.getStandardFee() == null ? BigDecimal.ZERO : clazz.getStandardFee();
+            String pay = trim(req.getParameter("pay"));
+
+            if ("WALLET".equalsIgnoreCase(pay)) {
+                BigDecimal balance = walletDAO.getBalance(user.getStudentId());
+                if (balance == null) balance = BigDecimal.ZERO;
+                if (fee.compareTo(BigDecimal.ZERO) > 0 && balance.compareTo(fee) < 0) {
+                    Flash.error(req, "Số dư ví không đủ. Vui lòng nạp thêm tiền hoặc chọn phương thức thanh toán khác.");
+                    resp.sendRedirect(req.getContextPath() + "/student/enroll?classId=" + classId);
+                    return;
+                }
+            }
+
             int enrollId;
             try {
                 enrollId = enrollmentDAO.create(user.getStudentId(), classId, "PENDING");
@@ -121,16 +133,21 @@ public class StudentEnrollServlet extends HttpServlet {
 
             int invoiceId = invoiceDAO.createInvoice(enrollId, fee, BigDecimal.ZERO, null);
 
-            String pay = trim(req.getParameter("pay"));
             if ("WALLET".equalsIgnoreCase(pay)) {
                 try {
                     walletDAO.debitForEnrollment(user.getStudentId(), enrollId, fee, user.getUserId(), "Pay invoice " + invoiceId);
                 } catch (IllegalStateException ex) {
                     if ("INSUFFICIENT_BALANCE".equals(ex.getMessage())) {
-                        Flash.error(req, "Số dư ví không đủ. Vui lòng nạp thêm tiền hoặc liên hệ tư vấn.");
-                        resp.sendRedirect(req.getContextPath() + "/student/wallet");
+                        // Rollback created enrollment/invoice so UI won't show "Đã đăng ký" when payment failed.
+                        try { enrollmentDAO.deleteCascade(enrollId); } catch (Exception ignored) {}
+                        Flash.error(req, "Số dư ví không đủ. Vui lòng nạp thêm tiền hoặc chọn phương thức thanh toán khác.");
+                        resp.sendRedirect(req.getContextPath() + "/student/enroll?classId=" + classId);
                         return;
                     }
+                    throw ex;
+                } catch (Exception ex) {
+                    // Any other error: also rollback the pending enrollment so it's not stuck.
+                    try { enrollmentDAO.deleteCascade(enrollId); } catch (Exception ignored) {}
                     throw ex;
                 }
 

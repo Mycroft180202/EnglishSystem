@@ -72,6 +72,8 @@ public class AuthzFilter implements Filter {
         if (path == null || path.isEmpty() || "/".equals(path)) return true;
         if (path.startsWith("/assets/")) return true;
         if (path.startsWith("/api/")) return true;
+        // Allow email verification links to work even when user is not logged in.
+        if (path.startsWith("/app/verify-email")) return true;
         return path.equals("/index.jsp")
                 || path.equals("/login")
                 || path.equals("/logout")

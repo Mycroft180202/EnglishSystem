@@ -1,0 +1,11 @@
+# Local mail config (DO NOT COMMIT your real file with secrets)
+#
+# Save a copy as:
+#   %USERPROFILE%\.englishsystem-mail.properties
+# or set a custom path via:
+#   -DMAIL_CONFIG_PATH=...
+#
+GMAIL_USERNAME=your@gmail.com
+GMAIL_APP_PASSWORD=your_app_password_without_spaces
+MAIL_FROM=your@gmail.com
+

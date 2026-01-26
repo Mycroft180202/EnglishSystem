@@ -22,7 +22,10 @@ public class UserDAO extends DBContext {
 
     public User findByUsername(String username) throws Exception {
         String sql = """
-                SELECT u.user_id, u.username, u.password_hash, u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
+                SELECT u.user_id, u.username, u.password_hash,
+                       u.full_name, u.email, u.phone, u.address,
+                       u.email_verified, u.email_verify_token, u.email_verify_expires,
+                       u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
                 FROM dbo.users u
                 LEFT JOIN dbo.user_roles ur ON u.user_id = ur.user_id
                 LEFT JOIN dbo.roles r ON ur.role_id = r.role_id
@@ -40,7 +43,10 @@ public class UserDAO extends DBContext {
 
     public User findById(int userId) throws Exception {
         String sql = """
-                SELECT u.user_id, u.username, u.password_hash, u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
+                SELECT u.user_id, u.username, u.password_hash,
+                       u.full_name, u.email, u.phone, u.address,
+                       u.email_verified, u.email_verify_token, u.email_verify_expires,
+                       u.must_change_password, u.status, u.created_at, u.teacher_id, u.student_id, r.role_code
                 FROM dbo.users u
                 LEFT JOIN dbo.user_roles ur ON u.user_id = ur.user_id
                 LEFT JOIN dbo.roles r ON ur.role_id = r.role_id
@@ -155,7 +161,14 @@ public class UserDAO extends DBContext {
     }
 
     public int createStudentUser(int studentId, String username, String passwordHash) throws Exception {
-        String insertUserSql = "INSERT INTO dbo.users(username, password_hash, student_id, must_change_password, status) VALUES(?, ?, ?, 1, N'ACTIVE')";
+        return createStudentUser(studentId, username, passwordHash, true, null, null);
+    }
+
+    public int createStudentUser(int studentId, String username, String passwordHash, boolean mustChangePassword, String fullName, String email) throws Exception {
+        String insertUserSql = """
+                INSERT INTO dbo.users(username, password_hash, student_id, must_change_password, status, full_name, email)
+                VALUES(?, ?, ?, ?, N'ACTIVE', NULLIF(?, N''), NULLIF(?, N''))
+                """;
         String insertRoleSql = """
                 INSERT INTO dbo.user_roles(user_id, role_id)
                 SELECT ?, role_id FROM dbo.roles WHERE role_code = N'STUDENT'
@@ -170,6 +183,9 @@ public class UserDAO extends DBContext {
                     ps.setString(1, username);
                     ps.setString(2, passwordHash);
                     ps.setInt(3, studentId);
+                    ps.setBoolean(4, mustChangePassword);
+                    ps.setString(5, fullName == null ? "" : fullName.trim());
+                    ps.setString(6, email == null ? "" : email.trim());
                     ps.executeUpdate();
                     try (ResultSet rs = ps.getGeneratedKeys()) {
                         if (!rs.next()) throw new IllegalStateException("No generated key returned");
@@ -300,6 +316,11 @@ public class UserDAO extends DBContext {
                 user.setUserId(rs.getInt("user_id"));
                 user.setUsername(rs.getString("username"));
                 user.setPasswordHash(rs.getString("password_hash"));
+                try { user.setFullName(rs.getString("full_name")); } catch (Exception ignored) {}
+                try { user.setEmail(rs.getString("email")); } catch (Exception ignored) {}
+                try { user.setPhone(rs.getString("phone")); } catch (Exception ignored) {}
+                try { user.setAddress(rs.getString("address")); } catch (Exception ignored) {}
+                try { user.setEmailVerified(rs.getBoolean("email_verified")); } catch (Exception ignored) {}
                 try { user.setMustChangePassword(rs.getBoolean("must_change_password")); } catch (Exception ignored) {}
                 user.setStatus(rs.getString("status"));
                 Timestamp createdAt = rs.getTimestamp("created_at");
@@ -315,5 +336,75 @@ public class UserDAO extends DBContext {
         if (user == null) return null;
         for (String r : roles) user.addRoleCode(r);
         return user;
+    }
+
+    public void updateProfile(int userId, String fullName, String email, String phone, String address) throws Exception {
+        String sql = """
+                UPDATE dbo.users
+                SET full_name = NULLIF(?, N''),
+                    email = NULLIF(?, N''),
+                    phone = NULLIF(?, N''),
+                    address = NULLIF(?, N'')
+                WHERE user_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, fullName == null ? "" : fullName.trim());
+            ps.setString(2, email == null ? "" : email.trim());
+            ps.setString(3, phone == null ? "" : phone.trim());
+            ps.setString(4, address == null ? "" : address.trim());
+            ps.setInt(5, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void clearEmailVerification(int userId) throws Exception {
+        String sql = """
+                UPDATE dbo.users
+                SET email_verified = 0,
+                    email_verify_token = NULL,
+                    email_verify_expires = NULL
+                WHERE user_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void issueEmailVerificationToken(int userId, String token, java.time.Instant expiresAt) throws Exception {
+        String sql = """
+                UPDATE dbo.users
+                SET email_verified = 0,
+                    email_verify_token = ?,
+                    email_verify_expires = ?
+                WHERE user_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, token);
+            ps.setTimestamp(2, expiresAt == null ? null : java.sql.Timestamp.from(expiresAt));
+            ps.setInt(3, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public Integer verifyEmailByToken(String token) throws Exception {
+        if (token == null || token.isBlank()) return null;
+        String sql = """
+                UPDATE dbo.users
+                SET email_verified = 1,
+                    email_verify_token = NULL,
+                    email_verify_expires = NULL
+                WHERE email_verify_token = ?
+                  AND (email_verify_expires IS NULL OR email_verify_expires >= SYSUTCDATETIME())
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, token.trim());
+            int affected = ps.executeUpdate();
+            return affected > 0 ? 1 : null;
+        }
     }
 }

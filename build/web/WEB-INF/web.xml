@@ -48,6 +48,24 @@
     </servlet-mapping>
 
     <servlet>
+        <servlet-name>ProfileServlet</servlet-name>
+        <servlet-class>Controller.ProfileServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProfileServlet</servlet-name>
+        <url-pattern>/app/profile</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>VerifyEmailServlet</servlet-name>
+        <servlet-class>Controller.VerifyEmailServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>VerifyEmailServlet</servlet-name>
+        <url-pattern>/app/verify-email</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
         <servlet-name>LogoutServlet</servlet-name>
         <servlet-class>Controller.LogoutServlet</servlet-class>
     </servlet>

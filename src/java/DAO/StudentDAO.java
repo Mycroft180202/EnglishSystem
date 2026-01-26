@@ -84,6 +84,26 @@ public class StudentDAO extends DBContext {
         }
     }
 
+    public void updateContact(int studentId, String fullName, String email, String phone, String address) throws Exception {
+        String sql = """
+                UPDATE dbo.students
+                SET full_name = NULLIF(?, N''),
+                    email = NULLIF(?, N''),
+                    phone = NULLIF(?, N''),
+                    address = NULLIF(?, N'')
+                WHERE student_id = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, fullName == null ? "" : fullName.trim());
+            ps.setString(2, email == null ? "" : email.trim());
+            ps.setString(3, phone == null ? "" : phone.trim());
+            ps.setString(4, address == null ? "" : address.trim());
+            ps.setInt(5, studentId);
+            ps.executeUpdate();
+        }
+    }
+
     public void setStatus(int studentId, String status) throws Exception {
         String sql = "UPDATE dbo.students SET status = ? WHERE student_id = ?";
         try (Connection con = getConnection();

@@ -37,6 +37,18 @@
                             <input class="form-control" name="username" maxlength="50" required value="${username}">
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Họ tên đầy đủ</label>
+                            <input class="form-control" name="fullName" maxlength="150" required value="${fullName}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email (không bắt buộc)</label>
+                            <input class="form-control" type="email" name="email" maxlength="255" value="${email}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại (không bắt buộc)</label>
+                            <input class="form-control" name="phone" maxlength="30" value="${phone}">
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Password</label>
                             <input class="form-control" type="password" name="password" required>
                             <div class="form-text">Tối thiểu 8 ký tự.</div>
